@@ -1,11 +1,26 @@
-Tests = [
+Tests = [ #ijson
+        'test_invalid',
+        'test_utf8_split',
+        'test_scalar',
+        'test_surrogate_pairs',
+        'test_lazy',
+        'test_boundary_whitespace',
+        'test_api',
+        'test_incomplete',
+        'test_basic_parse',
+        'test_numbers',
+        'test_strings',
+        'test_boundary_lexeme'
+        ]
+Tests_ = [ # microjson
         'test_dict',
         'test_list',
         'test_string',
         'test_integer',
         'test_floats',
         'test_null_and_bool',
-        'test_malformed']
+        'test_malformed'
+        ]
 
 lines = open('testsxmutants.txt').readlines()
 
