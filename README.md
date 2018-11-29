@@ -47,7 +47,7 @@ Immortals by manual inspection: 28
 ```
 cat microjson/test/plog/mutate.current.log  | grep -- '-survived' | wc -l
 ```
-Mortals by manula inspection on those that survived: 113
+Mortals by manual inspection on those that survived: 113
 ```
 cat microjson/test/plog/mutate.current.log  | grep -- '+survived' | wc -l
 ```
