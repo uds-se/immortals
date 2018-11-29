@@ -1,3 +1,4 @@
+mutant,operator,info,status
    1, AOR,microjson:10 ,incompetent
    2, AOR,microjson:28 ,incompetent
    3, AOR,microjson:58 ,killed by test_dict
