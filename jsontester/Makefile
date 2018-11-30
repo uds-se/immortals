@@ -100,6 +100,10 @@ mutate: $(target).mutate.$(testsuite).log
 	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_rfuzz -e -m | tee .$*.mutate.rfuzz.log
 	mv .$*.mutate.rfuzz.log $*.mutate.rfuzz.log
 
+%.mutate.test.log: targets/%.py tests/%_mfuzz.py # %.test.pickled
+	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_test -e -m | tee .$*.mutate.test.log
+	mv .$*.mutate.test.log $*.mutate.test.log
+
 #(5) MUTATION-STATUS
 mstatus: $(target).mstatus.$(testsuite).csv
 %.mstatus.gfuzz.csv: %.mutate.gfuzz.log
@@ -117,6 +121,10 @@ mstatus: $(target).mstatus.$(testsuite).csv
 	cat .$*.rfuzz.info | sed -e 's/^   - \[# *\([0-9]*\)\] \([A-Z]\{3\}\) \([^:]*:[0-9]*\) *: *.\[.*\]/\1,\2,\3,/g' > .$*.mstatus.rfuzz.csv
 	mv .$*.mstatus.rfuzz.csv $*.mstatus.rfuzz.csv
 
+%.mstatus.test.csv: %.mutate.test.log
+	cat $*.mutate.test.log | sed -e 1,6d| grep -e '\(\[........s\]\|$*:.*:\)' | paste - - > .$*.test.info
+	cat .$*.test.info | sed -e 's/^   - \[# *\([0-9]*\)\] \([A-Z]\{3\}\) \([^:]*:[0-9]*\) *: *.\[.*\]/\1,\2,\3,/g' > .$*.mstatus.test.csv
+	mv .$*.mstatus.test.csv $*.mstatus.test.csv
 
 #(6) TLOG
 tlog: $(target).$(testsuite).tlog
@@ -133,6 +141,11 @@ n=0
 	for i in mutants_$*/*/; do echo $$i | tee -a .$*.rfuzz.tlog; (export PYTHONPATH=$$i; ( $(python) tests/$*_rfuzz.py > $$i/.rfuzz-$(n).log 2>&1; mv $$i/.rfuzz-$(n).log $$i/rfuzz-$(n).log ) & ) ; done
 	mv .$*.rfuzz.tlog $*.rfuzz.tlog
 
+%.test.tlog: %.mutate.test.log
+	for i in mutants_$*/*/; do echo $$i | tee -a .$*.test.tlog; (export PYTHONPATH=$$i; ( $(python) tests/$*_test.py > $$i/.test-$(n).log 2>&1; mv $$i/.test-$(n).log $$i/test-$(n).log ) & ) ; done
+	mv .$*.test.tlog $*.test.tlog
+
+
 #(7) TSUMMARIZE
 tsummarize: $(target).$(testsuite).tsummarize
 %.gfuzz.tsummarize: %.gfuzz.tlog
@@ -144,6 +157,9 @@ tsummarize: $(target).$(testsuite).tsummarize
 %.rfuzz.tsummarize: %.rfuzz.tlog
 	for i in mutants_$*/*/rfuzz-$(n).log; do echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 
+%.test.tsummarize: %.test.tlog
+	for i in mutants_$*/*/test-$(n).log; do echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
+
 #(8) MATRIX
 matrix:	$(target).$(testsuite).matrix
 %.gfuzz.matrix: %.gfuzz.tsummarize
@@ -154,6 +170,9 @@ matrix:	$(target).$(testsuite).matrix
 
 %.rfuzz.matrix: %.rfuzz.tsummarize .%.mcount
 	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/rfuzz-$(n).log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests.rfuzz
+
+%.test.matrix: %.test.tsummarize .%.mcount
+	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/test-$(n).log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests.test
 
 .$(target).mcount:
 	ls mutants_$(target)/ | sort -rn | head -1 > .$(target).mcount
