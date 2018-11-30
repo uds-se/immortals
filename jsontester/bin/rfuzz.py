@@ -3,10 +3,9 @@ import random
 random.seed(0)
 import string
 import sys
-#import x.microjson
-from importlib import import_module
 
-import sys, os, importlib
+import os, importlib
+import coverage
 
 mfile = sys.argv[1]
 
@@ -84,20 +83,26 @@ def dump_and_flush(f, s):
 
 import pickle
 #import coverage
+oldmissing = []
 with open('%s.rfuzz.pickled' % mfile, 'wb+') as f:
-    #cov = coverage.Coverage()
-    for _i in range(1000):
+    cov = coverage.Coverage()
+    for _i in range(10000):
         i = fuzzer(max_length=10)
-        #cov.start()
         s = str(i)
         sys.stdout.flush()
         r = None
         if s in strings: continue
         try:
+            cov.start()
             r = mymodule.from_json(i)
             strings[s] = r
+            cov.stop()
+            covf = cov.get_data().measured_files()[0]
+            _fn, _executed, _notrun, missing = cov.analysis(covf)
+            if str(missing) != str(oldmissing):
+                dump_and_flush(f, [s, ('out', r)])
 
-            for _ in range(1000):
+            for _ in range(100):
                 i = mutate(i)
                 s = str(i)
                 if s in strings: continue
@@ -113,6 +118,7 @@ with open('%s.rfuzz.pickled' % mfile, 'wb+') as f:
                     break
 
         except Exception as e:
+            cov.stop()
             r = str(e)
             dump_and_flush(f, [s, ('err', r)])
             estrings[s] = e
