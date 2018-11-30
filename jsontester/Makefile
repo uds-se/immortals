@@ -77,7 +77,7 @@ mutate: $(target).mutate.$(testsuite).log
 	mv .$*.mutate.mfuzz.log $*.mutate.mfuzz.log
 
 %.mutate.rfuzz.log: targets/%.py tests/%_mfuzz.py # %.rfuzz.pickled
-	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_mfuzz -e -m | tee .$*.mutate.rfuzz.log
+	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_rfuzz -e -m | tee .$*.mutate.rfuzz.log
 	mv .$*.mutate.rfuzz.log $*.mutate.rfuzz.log
 
 #(5) MUTATION-STATUS
@@ -95,11 +95,11 @@ n=0
 	mv .$*.gfuzz.tlog $*.gfuzz.tlog
 
 %.mfuzz.tlog: %.mutate.mfuzz.log
-	for i in mutants_$*/*/; do echo $$i | tee -a .$*.mfuzz.tlog; (export PYTHONPATH=$$i; ( $(python) tests/$*_gfuzz.py > $$i/.mfuzz-$(n).log 2>&1; mv $$i/.mfuzz-$(n).log $$i/mfuzz-$(n).log ) & ) ; done
+	for i in mutants_$*/*/; do echo $$i | tee -a .$*.mfuzz.tlog; (export PYTHONPATH=$$i; ( $(python) tests/$*_mfuzz.py > $$i/.mfuzz-$(n).log 2>&1; mv $$i/.mfuzz-$(n).log $$i/mfuzz-$(n).log ) & ) ; done
 	mv .$*.mfuzz.tlog $*.mfuzz.tlog
 
 %.rfuzz.tlog: %.mutate.rfuzz.log
-	for i in mutants_$*/*/; do echo $$i | tee -a .$*.rfuzz.tlog; (export PYTHONPATH=$$i; ( $(python) tests/$*_gfuzz.py > $$i/.rfuzz-$(n).log 2>&1; mv $$i/.rfuzz-$(n).log $$i/rfuzz-$(n).log ) & ) ; done
+	for i in mutants_$*/*/; do echo $$i | tee -a .$*.rfuzz.tlog; (export PYTHONPATH=$$i; ( $(python) tests/$*_rfuzz.py > $$i/.rfuzz-$(n).log 2>&1; mv $$i/.rfuzz-$(n).log $$i/rfuzz-$(n).log ) & ) ; done
 	mv .$*.rfuzz.tlog $*.rfuzz.tlog
 
 #(7) TSUMMARIZE
