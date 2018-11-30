@@ -114,7 +114,7 @@ tsummarize: $(target).$(testsuite).tsummarize
 	for i in mutants_$*/*/rfuzz-$(n).log; do echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 
 #(8) MATRIX
-matrix:	$(target).$(testsuite).matrix: 
+matrix:	$(target).$(testsuite).matrix
 %.gfuzz.matrix: %.gfuzz.tsummarize
 	for i in $$(seq 1 $(cat .$(target)-$(testsuite).mcount)); do echo $$i $$(cat mutants_$*/$$i/gfuzz-$(n).log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests
 
