@@ -100,14 +100,14 @@ mutant,operator,info,status
   99,AOR,nayajson:454,killed by test_objects
  100,AOR,nayajson:461,+survived
  101,AOR,nayajson:462,killed by test_objects
- 102,AOR,nayajson:465,?survived
- 103,AOR,nayajson:465,?survived
+ 102,AOR,nayajson:465,+survived
+ 103,AOR,nayajson:465,+survived
  104,AOR,nayajson:469,killed by test_objects
  105,AOR,nayajson:470,+survived
  106,AOR,nayajson:471,killed by test_objects
  107,AOR,nayajson:472,killed by test_objects
- 108,AOR,nayajson:478,?survived
- 109,AOR,nayajson:478,?survived
+ 108,AOR,nayajson:478,+survived
+ 109,AOR,nayajson:478,+survived
  110,AOR,nayajson:491,killed by test_objects
  111,AOR,nayajson:492,killed by test_objects
  112,AOR,nayajson:497,killed by test_arrays
