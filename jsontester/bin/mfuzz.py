@@ -80,18 +80,32 @@ def dump_and_flush(f, s):
 
 import pickle
 #import coverage
-with open('%s.gfuzz.pickled' % mfile, 'wb+') as f:
+with open('%s.mfuzz.pickled' % mfile, 'wb+') as f:
     #cov = coverage.Coverage()
-    for i in fuzzer.gen(num=10000, cat='json', max_recursion=10):
+    for i in fuzzer.gen(num=1000, cat='json', max_recursion=10):
         #cov.start()
         s = str(i)
+        #print(repr(s))
         sys.stdout.flush()
         r = None
         if s in strings: continue
         try:
             r = mymodule.from_json(i)
-            dump_and_flush(f, [s, ('out', r)])
             strings[s] = r
+
+            for _ in range(10):
+                i = mutate(i)
+                s = str(i)
+                if s in strings: continue
+                try:
+                    r = mymodule.from_json(i)
+                    dump_and_flush(f, [s, ('out', r)])
+                    # ignore
+                    #strings[s] = r
+                except Exception as e:
+                    r = str(e)
+                    dump_and_flush(f, [s, ('err', r)])
+                    estrings[s] = e
 
         except Exception as e:
             r = str(e)
