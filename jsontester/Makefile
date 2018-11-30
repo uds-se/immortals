@@ -41,6 +41,7 @@ tests/%_rfuzz.py: %.rfuzz.pickled
 	PYTHONPATH=targets: $(python) bin/json_test_tmpl.py $< > .$*_rfuzz.py
 	mv .$*_rfuzz.py tests/$*_rfuzz.py
 
+
 #(*) TEXEC
 texec: $(target).texec.$(testsuite)
 %.texec.gfuzz: tests/%_gfuzz.py
@@ -79,7 +80,7 @@ coverage: $(target).coverage.$(testsuite)
 	coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.rfuzz
 	mv .$*.coverage.rfuzz $*.coverage.rfuzz
 
-%.coverage.test: tests/%_test.py
+%.coverage.test: tests/%_test.py targets/nayajson.py
 	rm -rf .coverage
 	PYTHONPATH=targets coverage run $<
 	coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.test

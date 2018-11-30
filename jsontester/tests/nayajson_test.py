@@ -1,7 +1,7 @@
 from io import StringIO
 import json
 import unittest
-from naya.json import tokenize, TOKEN_TYPE, parse_string, parse, stream_array
+from nayajson import tokenize, TOKEN_TYPE, parse_string, parse
 
 
 class TestJsonTokenization(unittest.TestCase):
@@ -223,16 +223,16 @@ class TestJsonTokenization(unittest.TestCase):
         self.assertRaises(ValueError, parse_string, '{"key", "value": "value2" []}')
         self.assertRaises(ValueError, parse_string, '{"key", "value": ["value2"]}')
 
-#    def test_array_stream(self):
-#        arr = stream_array(tokenize(StringIO('[]')))
-#        self.assertListEqual([i for i in arr], [])
-#        arr = stream_array(tokenize(StringIO('["People", "Places", "Things"]')))
-#        self.assertListEqual([i for i in arr], ["People", "Places", "Things"])
-#        arr = stream_array(tokenize(StringIO('["Apples", "Bananas", ["Pears", "Limes"]]')))
-#        self.assertListEqual([i for i in arr], ["Apples", "Bananas", ["Pears", "Limes"]])
-#        arr = stream_array(tokenize(StringIO('["Apples", ["Pears", "Limes"], "Bananas"]')))
-#        self.assertListEqual([i for i in arr], ["Apples", ["Pears", "Limes"], "Bananas"])
-#
+#   def test_array_stream(self):
+#       arr = stream_array(tokenize(StringIO('[]')))
+#       self.assertListEqual([i for i in arr], [])
+#       arr = stream_array(tokenize(StringIO('["People", "Places", "Things"]')))
+#       self.assertListEqual([i for i in arr], ["People", "Places", "Things"])
+#       arr = stream_array(tokenize(StringIO('["Apples", "Bananas", ["Pears", "Limes"]]')))
+#       self.assertListEqual([i for i in arr], ["Apples", "Bananas", ["Pears", "Limes"]])
+#       arr = stream_array(tokenize(StringIO('["Apples", ["Pears", "Limes"], "Bananas"]')))
+#       self.assertListEqual([i for i in arr], ["Apples", ["Pears", "Limes"], "Bananas"])
+
 #    def test_large_sample(self):
 #        with open("tests/sample.json", "r", encoding="utf-8") as file:
 #            obj2 = json.load(file)
@@ -240,3 +240,11 @@ class TestJsonTokenization(unittest.TestCase):
 #            obj = parse(file)
 #
 #        self.assertDictEqual(obj, obj2)
+
+def main():
+    unittest.main()
+
+
+if __name__ == "__main__":
+    main()
+        

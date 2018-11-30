@@ -540,27 +540,27 @@ def __parse(token_stream, first_token):
             raise ValueError("JSON Object not properly closed") from e
 
 
-def stream_array(token_stream):
-    token_type, token = next(token_stream)
-
-    if token_type != TOKEN_TYPE.OPERATOR or token != '[':
-        raise ValueError("Array must start with '['.  Got '{}'".format(token))
-
-    while True:
-        token_type, token = next(token_stream)
-        if token_type == TOKEN_TYPE.OPERATOR:
-            if token == ']':
-                return
-            elif token == ",":
-                token_type, token = next(token_stream)
-                if token_type == TOKEN_TYPE.OPERATOR:
-                    if token == "[" or token == "{":
-                        yield __parse(token_stream, (token_type, token))
-                    else:
-                        raise ValueError("Expected an array value.  Got '{}'".format(token))
-                else:
-                    yield token
-            else:
-                raise ValueError("Array entries must be followed by ',' or ']'.  Got '{}'".format(token))
-        else:
-            yield token
+#def stream_array(token_stream):
+#    token_type, token = next(token_stream)
+#
+#    if token_type != TOKEN_TYPE.OPERATOR or token != '[':
+#        raise ValueError("Array must start with '['.  Got '{}'".format(token))
+#
+#    while True:
+#        token_type, token = next(token_stream)
+#        if token_type == TOKEN_TYPE.OPERATOR:
+#            if token == ']':
+#                return
+#            elif token == ",":
+#                token_type, token = next(token_stream)
+#                if token_type == TOKEN_TYPE.OPERATOR:
+#                    if token == "[" or token == "{":
+#                        yield __parse(token_stream, (token_type, token))
+#                    else:
+#                        raise ValueError("Expected an array value.  Got '{}'".format(token))
+#                else:
+#                    yield token
+#            else:
+#                raise ValueError("Array entries must be followed by ',' or ']'.  Got '{}'".format(token))
+#        else:
+#            yield token
