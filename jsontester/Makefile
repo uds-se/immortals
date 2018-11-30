@@ -1,11 +1,17 @@
 python=python3
 target=microjson
 test_target=$(target)_test
+pyminifier=pyminifier
+autopep8=autopep8
 
-targets/%.py: originals/%.py
-	/usr/local/bin/pyminifier $< > $@
+alltargets: targets/microjson.py targets/ijson.py
+
+targets:; mkdir -p targets
+
+targets/%.py: originals/%.py | targets
+	$(pyminifier) $< > $@
 	mkdir -p targets/formatted
-	/usr/local/bin/autopep8 $@ > targets/formatted/$(@F)
+	$(autopep8) $@ > targets/formatted/$(@F)
 
 fuzz.pickled: fuzz.py
 	$(python) fuzz.py
