@@ -79,6 +79,12 @@ coverage: $(target).coverage.$(testsuite)
 	coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.rfuzz
 	mv .$*.coverage.rfuzz $*.coverage.rfuzz
 
+%.coverage.test: tests/%_test.py
+	rm -rf .coverage
+	PYTHONPATH=targets coverage run $<
+	coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.test
+	mv .$*.coverage.test $*.coverage.test
+
 #(4) MUTATE
 mutate: $(target).mutate.$(testsuite).log
 %.mutate.gfuzz.log: targets/%.py tests/%_gfuzz.py # %.gfuzz.pickled
