@@ -116,14 +116,16 @@ tsummarize: $(target).$(testsuite).tsummarize
 #(8) MATRIX
 matrix:	$(target).$(testsuite).matrix
 %.gfuzz.matrix: %.gfuzz.tsummarize
-	for i in $$(seq 1 $(cat .$(target)-$(testsuite).mcount)); do echo $$i $$(cat mutants_$*/$$i/gfuzz-$(n).log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests
+	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/gfuzz-$(n).log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests
 
 %.mfuzz.matrix: %.mfuzz.tsummarize
-	for i in $$(seq 1 $(cat .$(target)-$(testsuite).mcount)); do echo $$i $$(cat mutants_$*/$$i/mfuzz-$(n).log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests
+	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/mfuzz-$(n).log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests
 
-%.rfuzz.matrix: %.rfuzz.tsummarize
-	for i in $$(seq 1 $(cat .$(target)-$(testsuite).mcount)); do echo $$i $$(cat mutants_$*/$$i/rfuzz-$(n).log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests
+%.rfuzz.matrix: %.rfuzz.tsummarize .%.mcount
+	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/rfuzz-$(n).log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests
 
+.$(target).mcount:
+	ls mutants_$(target)/ | sort -rn | head -1 > .$(target).mcount
 
 # CLEAN
 
