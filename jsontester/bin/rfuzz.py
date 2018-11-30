@@ -97,7 +97,7 @@ with open('%s.rfuzz.pickled' % mfile, 'wb+') as f:
             r = mymodule.from_json(i)
             strings[s] = r
 
-            for _ in range(10):
+            for _ in range(1000):
                 i = mutate(i)
                 s = str(i)
                 if s in strings: continue
@@ -110,6 +110,7 @@ with open('%s.rfuzz.pickled' % mfile, 'wb+') as f:
                     r = str(e)
                     dump_and_flush(f, [s, ('err', r)])
                     estrings[s] = e
+                    break
 
         except Exception as e:
             r = str(e)
