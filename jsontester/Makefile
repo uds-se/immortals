@@ -7,7 +7,7 @@ autopep8=autopep8
 
 gfuzzn=
 
-alltargets: targets/microjson.py targets/ijson.py
+alltargets: targets/microjson.py targets/ijson.py targets/nayajson.py
 
 targets:; mkdir -p targets
 
@@ -45,6 +45,19 @@ tests/%_rfuzz.py: %.rfuzz.pickled
 texec: $(target).texec.$(testsuite)
 %.texec.gfuzz: tests/%_gfuzz.py
 	PYTHONPATH=targets:tests python3 $< -v
+
+texec: $(target).texec.$(testsuite)
+%.texec.mfuzz: tests/%_mfuzz.py
+	PYTHONPATH=targets:tests python3 $< -v
+
+texec: $(target).texec.$(testsuite)
+%.texec.rfuzz: tests/%_rfuzz.py
+	PYTHONPATH=targets:tests python3 $< -v
+
+texec: $(target).texec.$(testsuite)
+%.texec.test: tests/%_test.py
+	PYTHONPATH=targets:tests python3 $< -v
+
 
 #(3) COVERAGE
 coverage: $(target).coverage.$(testsuite)
