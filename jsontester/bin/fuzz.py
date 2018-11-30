@@ -1,8 +1,9 @@
+#!/usr/bin/env python3
 import random
 import string
 import json
 import gramfuzz
-import x.microjson
+import microjson
 
 
 def delete_random_character(s):
@@ -18,11 +19,11 @@ def delete_random_character(s):
 def insert_random_character(s):
     """Returns s with a random character inserted"""
     pos = random.randint(0, len(s))
-    #random_character = chr(random.randrange(32, 127))
+    random_character = chr(random.randrange(0, 128))
     #random_character = random.choice(string.ascii_letters + string.punctuation)
-    random_character = random.choice(list(set(string.printable) - set(['\n', '\r', '\x0c'])))
-    if random_character == "'":
-        random_character = "\'"
+    #random_character = random.choice(list(set(string.printable) - set(['\n', '\r', '\x0c'])))
+    #if random_character == "'":
+    #    random_character = "\'"
     # print("Inserting", repr(random_character), "at", pos)
     return s[:pos] + random_character + s[pos:]
 
@@ -53,19 +54,19 @@ def mutate(s):
 
 fuzzer = gramfuzz.GramFuzzer()
 
-fuzzer.load_grammar('grammar.py')
+fuzzer.load_grammar('./bin/grammar.py')
 
 strings  = {}
 estrings  = {}
 
-for i in fuzzer.gen(num=1000, cat='json', max_recursion=10):
+for i in fuzzer.gen(num=100000, cat='json', max_recursion=10):
     s = str(i)
     if s in strings: continue
     try:
         r = x.microjson.from_json(i)
         strings[s] = r
 
-        for _ in range(100):
+        for _ in range(128):
             i = mutate(i)
             s = str(i)
             if s in strings: continue
@@ -74,11 +75,13 @@ for i in fuzzer.gen(num=1000, cat='json', max_recursion=10):
                 # ignore
                 #strings[s] = r
             except x.microjson.JSONError as e:
+                estrings[s] = str(e)
+            except Exception as e:
                 estrings[s] = e
-            except:
-                pass
 
     except x.microjson.JSONError as e:
+        estrings[s] = e
+    except Exception as e:
         estrings[s] = e
 
 import pickle
@@ -88,12 +91,3 @@ def to_lst(d):
 with open('fuzz.pickled', 'wb+') as f:
     pickle.dump([to_lst(strings),to_lst(estrings)], f)
 
-#print("T_PARSE = [")
-#for s in strings:
-#    print("(%s,%s)," % (s, strings[s]))
-#print("]")
-
-#print("E_PARSE = [")
-#for s in estrings:
-#    print("(%s,%s)," % (s, json.dumps(str(estrings[s]))))
-#print("]")
