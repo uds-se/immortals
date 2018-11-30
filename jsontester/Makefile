@@ -5,6 +5,8 @@ test_target=$(target)_$(testsuite)
 pyminifier=pyminifier
 autopep8=autopep8
 
+gfuzzn=
+
 alltargets: targets/microjson.py targets/ijson.py
 
 targets:; mkdir -p targets
@@ -22,6 +24,9 @@ pickled: $(target).$(testsuite).pickled
 %.mfuzz.pickled: bin/mfuzz.py
 	PYTHONPATH=lib: $(python) bin/mfuzz.py targets/$*.py
 
+%.rfuzz.pickled: bin/rfuzz.py
+	PYTHONPATH=lib: $(python) bin/rfuzz.py targets/$*.py
+
 #(2) TEST
 test: tests/$(target)_$(testsuite).py
 tests/%_gfuzz.py: %.gfuzz.pickled
@@ -32,16 +37,14 @@ tests/%_mfuzz.py: %.mfuzz.pickled
 	PYTHONPATH=targets: $(python) bin/json_test_tmpl.py $< > .$*_mfuzz.py
 	mv .$*_mfuzz.py tests/$*_mfuzz.py
 
+tests/%_rfuzz.py: %.rfuzz.pickled
+	PYTHONPATH=targets: $(python) bin/json_test_tmpl.py $< > .$*_rfuzz.py
+	mv .$*_rfuzz.py tests/$*_rfuzz.py
+
 #(*) TEXEC
 texec: $(target).texec.$(testsuite)
 %.texec.gfuzz: tests/%_gfuzz.py
 	PYTHONPATH=targets:tests python3 $< -v
-
-%.coverage.mfuzz: tests/%_mfuzz.py
-	rm -rf .coverage
-	PYTHONPATH=targets coverage run $<
-	coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.mfuzz
-	mv .$*.coverage.mfuzz $*.coverage.mfuzz
 
 #(3) COVERAGE
 coverage: $(target).coverage.$(testsuite)
@@ -57,11 +60,25 @@ coverage: $(target).coverage.$(testsuite)
 	coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.mfuzz
 	mv .$*.coverage.mfuzz $*.coverage.mfuzz
 
+%.coverage.rfuzz: tests/%_rfuzz.py
+	rm -rf .coverage
+	PYTHONPATH=targets coverage run $<
+	coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.rfuzz
+	mv .$*.coverage.rfuzz $*.coverage.rfuzz
+
 #(4) MUTATE
 mutate: $(target).mutate.$(testsuite).log
 %.mutate.gfuzz.log: targets/%.py tests/%_gfuzz.py # %.gfuzz.pickled
 	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_gfuzz -e -m | tee .$*.mutate.gfuzz.log
 	mv .$*.mutate.gfuzz.log $*.mutate.gfuzz.log
+
+%.mutate.mfuzz.log: targets/%.py tests/%_mfuzz.py # %.mfuzz.pickled
+	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_mfuzz -e -m | tee .$*.mutate.mfuzz.log
+	mv .$*.mutate.mfuzz.log $*.mutate.mfuzz.log
+
+%.mutate.rfuzz.log: targets/%.py tests/%_mfuzz.py # %.rfuzz.pickled
+	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_mfuzz -e -m | tee .$*.mutate.rfuzz.log
+	mv .$*.mutate.rfuzz.log $*.mutate.rfuzz.log
 
 #(5) MUTATION-STATUS
 mstatus: $(target).mstatus.$(testsuite).csv
@@ -77,27 +94,46 @@ n=0
 	for i in mutants_$*/*/; do echo $$i | tee -a .$*.gfuzz.tlog; (export PYTHONPATH=$$i; ( $(python) tests/$*_gfuzz.py > $$i/.gfuzz-$(n).log 2>&1; mv $$i/.gfuzz-$(n).log $$i/gfuzz-$(n).log ) & ) ; done
 	mv .$*.gfuzz.tlog $*.gfuzz.tlog
 
+%.mfuzz.tlog: %.mutate.mfuzz.log
+	for i in mutants_$*/*/; do echo $$i | tee -a .$*.mfuzz.tlog; (export PYTHONPATH=$$i; ( $(python) tests/$*_gfuzz.py > $$i/.mfuzz-$(n).log 2>&1; mv $$i/.mfuzz-$(n).log $$i/mfuzz-$(n).log ) & ) ; done
+	mv .$*.mfuzz.tlog $*.mfuzz.tlog
+
+%.rfuzz.tlog: %.mutate.rfuzz.log
+	for i in mutants_$*/*/; do echo $$i | tee -a .$*.rfuzz.tlog; (export PYTHONPATH=$$i; ( $(python) tests/$*_gfuzz.py > $$i/.rfuzz-$(n).log 2>&1; mv $$i/.rfuzz-$(n).log $$i/rfuzz-$(n).log ) & ) ; done
+	mv .$*.rfuzz.tlog $*.rfuzz.tlog
+
 #(7) TSUMMARIZE
 tsummarize: $(target).$(testsuite).tsummarize
 %.gfuzz.tsummarize: %.gfuzz.tlog
 	for i in mutants_$*/*/gfuzz-$(n).log; do echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 
+%.mfuzz.tsummarize: %.mfuzz.tlog
+	for i in mutants_$*/*/mfuzz-$(n).log; do echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
+
+%.rfuzz.tsummarize: %.rfuzz.tlog
+	for i in mutants_$*/*/rfuzz-$(n).log; do echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
+
+#(8) MATRIX
+matrix:	$(target).$(testsuite).matrix: 
+%.gfuzz.matrix: %.gfuzz.tsummarize
+	for i in $$(seq 1 $(cat .$(target)-$(testsuite).mcount)); do echo $$i $$(cat mutants_$*/$$i/gfuzz-$(n).log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests
+
+%.mfuzz.matrix: %.mfuzz.tsummarize
+	for i in $$(seq 1 $(cat .$(target)-$(testsuite).mcount)); do echo $$i $$(cat mutants_$*/$$i/mfuzz-$(n).log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests
+
+%.rfuzz.matrix: %.rfuzz.tsummarize
+	for i in $$(seq 1 $(cat .$(target)-$(testsuite).mcount)); do echo $$i $$(cat mutants_$*/$$i/rfuzz-$(n).log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests
+
+
+# CLEAN
+
 clean:
 	rm *$(testsuite)*
+
+
 #-------------------
 m:
 	@echo IMPORTANT: verify Customized in the next line
 	PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --help
 
-update_test: .update_test
 
-.update_test:
-	for i in mutants_$(target)/*/; do echo $$i; (export PYTHONPATH=$$i; $(python) tests/$(test_target).py 2>&1 | tee $$i/test.log ) ; done
-	touch .update_test
-
-update_testfails:
-	for i in mutants_$(target)/*/test.log; do echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
-
-
-x:
-	for i in $$(seq 1 274); do echo $$i $$(cat ijsonmutants/$$i/test.log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests
