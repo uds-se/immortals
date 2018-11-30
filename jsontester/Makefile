@@ -1,6 +1,7 @@
 python=python3
 target=microjson
-test_target=$(target)_test
+testsuite=gfuzz
+test_target=$(target)_$(testsuite)
 pyminifier=pyminifier
 autopep8=autopep8
 
@@ -13,52 +14,62 @@ targets/%.py: originals/%.py | targets
 	mkdir -p targets/formatted
 	$(autopep8) $@ > targets/formatted/$(@F)
 
-pickled: $(target).fuzz.pickled
-
-#(1)
+#(1) PICKLE
+pickled: $(target).$(testsuite).pickled
 %.gfuzz.pickled: bin/gfuzz.py
 	PYTHONPATH=lib: $(python) bin/gfuzz.py targets/$*.py
 
-#(2)
-tests/microjson_gfuzz.py: microjson.gfuzz.pickled
-	PYTHONPATH=targets: $(python) bin/microjson_test_tmpl.py $< > .microjson_gfuzz.py
-	mv .microjson_gfuzz.py tests/microjson_gfuzz.py
+#(2) TEST
+test: tests/$(target)_$(testsuite).py
+tests/%_gfuzz.py: %.gfuzz.pickled
+	PYTHONPATH=targets: $(python) bin/$*_test_tmpl.py $< > .$*_gfuzz.py
+	mv .$*_gfuzz.py tests/$*_gfuzz.py
 
+#(3) COVERAGE
+coverage: $(target).coverage.$(testsuite)
 %.coverage.gfuzz: tests/%_gfuzz.py
 	rm -rf .coverage
 	PYTHONPATH=targets:tests coverage run $<
 	coverage report -m | grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.gfuzz
 	mv .$*.coverage.gfuzz $*.coverage.gfuzz
 
-
-coverage.test: tests/$(test_target).py
+%.coverage.test: tests/%_test.py
 	rm -rf .coverage
-	PYTHONPATH=originals coverage run tests/$(test_target).py
-	coverage report -m | tee coverage.test
+	PYTHONPATH=originals coverage run tests/$*_test.py
+	coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.test
+	mv .$*.coverage.test $*.coverage.test
 
+
+#(4) MUTATE
+mutate: $(target).mutate.$(testsuite).log
+%.mutate.gfuzz.log: targets/%.py
+	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_gfuzz -e -m | tee .$*.mutate.gfuzz.log
+	mv .$*.mutate.gfuzz.log $*.mutate.gfuzz.log
+
+#(5) MUTATION-STATUS
+mstatus: $(target).mstatus.$(testsuite).csv
+%.mstatus.gfuzz.csv: %.mutate.gfuzz.log
+	cat $*.mutate.gfuzz.log | sed -e 1,6d| grep -e '\(\[........s\]\|$*:.*:\)' | paste - - > .$*.gfuzz.info
+	cat .$*.gfuzz.info | sed -e 's/^   - \[# *\([0-9]*\)\] \([A-Z]\{3\}\) \([^:]*:[0-9]*\) *: *.\[.*\]/\1,\2,\3,/g' > .$*.mstatus.gfuzz.csv
+	mv .$*.mstatus.gfuzz.csv $*.mstatus.gfuzz.csv
+
+#(6) TLOG
+tlog: $(target).$(testsuite).tlog
 n=0
-fuzz:
-	for i in mutants/*/; do echo $$i; (export PYTHONPATH=$$i; $(python) microjson_fuzz.py 2>&1 | tee $$i/fuzz-$(n).log & ) ; done
+%.gfuzz.tlog: %.mutate.gfuzz.log
+	for i in mutants_$*/*/; do echo $$i | tee -a .$*.gfuzz.tlog; (export PYTHONPATH=$$i; $(python) tests/$*_gfuzz.py > $$i/gfuzz-$(n).log 2>&1 & ) ; done
+	mv .$*.gfuzz.tlog $*.gfuzz.tlog
 
-mutate: $(taget)-mutate.log
+#(7) TSUMMARIZE
+tsummarize: $(target).$(testsuite).tsummarize
+%.gfuzz.tsummarize: %.mutate.gfuzz.tlog
+	for i in mutants_$*/*/test.log; do echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 
-$(taget)-mutate.log: targets/$(target).py
-	TARGET=$(target) PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $(target) --unit-test $(test_target) -e -m | tee $(target)-mutate.log
 
-
-status: status-$(target).csv
-
-status-$(target).csv: $(taget)-mutate.log
-	cat $(target)-mutate.log | sed -e 1,6d| grep -e '\(\[........s\]\|$(target):.*:\)' | paste - - > status-$(target).info
-	cat status-$(target).info | sed -e 's/^   - \[# *\([0-9]*\)\] \([A-Z]\{3\}\) \([^:]*:[0-9]*\) *: *.\[.*\]/\1,\2,\3,/g' > status-$(target).csv
-
+#-------------------
 m:
 	@echo IMPORTANT: verify Customized in the next line
 	PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --help
-
-mutatefuzz:
-	TARGET=$(target) PYTHONPATH=.:targets:tests:lib $(python) ./bin/mut.py --target $(target) --unit-test microjson_gfuzz -e -m | tee mutategfuzz.log
-
 
 update_test: .update_test
 
