@@ -1,4 +1,5 @@
 from gramfuzz.fields import  *
+import string
 
 TOP_CAT = "json"
 
@@ -44,7 +45,8 @@ RDef("json-object",
 )
 
 RDef("key",
-     Q(String(charset=String.charset_alphanum, min=5, max=10))
+     Q(String(charset=string.printable, min=5, max=10))
+#     Q(String(charset=String.charset_alphanum, min=5, max=10))
 )
 
 RDef("sep",

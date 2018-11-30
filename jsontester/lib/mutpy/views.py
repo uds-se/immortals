@@ -161,12 +161,12 @@ class TextView(QuietTextView):
         mutant_src = codegen.to_source(mutant)
         hash_object = hashlib.md5(mutant_src.encode())
         hsh = hash_object.hexdigest()
-        target = os.getenv('TARGET') or 'T_'
-        os.system("mkdir -p ./%smutants/%d" % (target, number))
+        target = os.getenv('TARGET') or 'T'
+        os.system("mkdir -p ./mutants_%s/%d" % (target, number))
 
-        with open('./%smutants/%d/%s.py' % (target, number,name), 'w+') as f:
+        with open('./mutants_%s/%d/%s.py' % (target, number,name), 'w+') as f:
             f.write(mutant_src)
-        with open('./%smutants/original.py' % target, 'w+') as f:
+        with open('./mutants_%s/original.py' % target, 'w+') as f:
             f.write(o_src)
         mutant_src = codegen.add_line_numbers(mutant_src)
         o_src = codegen.add_line_numbers(o_src)

@@ -1,2 +1,4 @@
 pyminifier==2.1
 autopep8==1.4.3
+pyyaml==3.13
+jinja2=2.10

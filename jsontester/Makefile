@@ -13,16 +13,22 @@ targets/%.py: originals/%.py | targets
 	mkdir -p targets/formatted
 	$(autopep8) $@ > targets/formatted/$(@F)
 
-fuzz.pickled: fuzz.py
-	$(python) fuzz.py
+pickled: $(target).fuzz.pickled
 
-microjson_fuzz.py: fuzz.pickled
-	$(python) microjson_fuzz_tmpl.py > microjson_fuzz.py
+#(1)
+%.gfuzz.pickled: bin/gfuzz.py
+	PYTHONPATH=lib: $(python) bin/gfuzz.py targets/$*.py
 
-coverage.fuzz: microjson_fuzz.py
+#(2)
+tests/microjson_gfuzz.py: microjson.gfuzz.pickled
+	PYTHONPATH=targets: $(python) bin/microjson_test_tmpl.py $< > .microjson_gfuzz.py
+	mv .microjson_gfuzz.py tests/microjson_gfuzz.py
+
+%.coverage.gfuzz: tests/%_gfuzz.py
 	rm -rf .coverage
-	coverage run microjson_fuzz.py
-	coverage report -m | tee coverage.fuzz
+	PYTHONPATH=targets:tests coverage run $<
+	coverage report -m | grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.gfuzz
+	mv .$*.coverage.gfuzz $*.coverage.gfuzz
 
 
 coverage.test: tests/$(test_target).py
@@ -51,17 +57,17 @@ m:
 	PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --help
 
 mutatefuzz:
-	$(python) /usr/local/bin/mut.py --target targets/$(target) --unit-test microjson_fuzz -e -m | tee mutatefuzz.log
+	TARGET=$(target) PYTHONPATH=.:targets:tests:lib $(python) ./bin/mut.py --target $(target) --unit-test microjson_gfuzz -e -m | tee mutategfuzz.log
 
 
 update_test: .update_test
 
 .update_test:
-	for i in $(target)mutants/*/; do echo $$i; (export PYTHONPATH=$$i; $(python) tests/$(test_target).py 2>&1 | tee $$i/test.log ) ; done
+	for i in mutants_$(target)/*/; do echo $$i; (export PYTHONPATH=$$i; $(python) tests/$(test_target).py 2>&1 | tee $$i/test.log ) ; done
 	touch .update_test
 
 update_testfails:
-	for i in $(target)mutants/*/test.log; do echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
+	for i in mutants_$(target)/*/test.log; do echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 
 
 x:
