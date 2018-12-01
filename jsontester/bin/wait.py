@@ -10,3 +10,4 @@ while num > 0:
             num += 1
             print(i, s)
     time.sleep(10)
+    print()

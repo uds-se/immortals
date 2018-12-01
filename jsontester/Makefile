@@ -57,13 +57,14 @@ tests/%_gfuzz.py: %.gfuzz.pickled
 	mv .$*_gfuzz.py tests/$*_gfuzz.py
 
 tests/%_mfuzz.py: %.mfuzz.pickled
-	PYTHONPATH=targets: $(python) bin/json_test_tmpl.py $< > .$*_mfuzz.py
+	PYTHONPATH=targets: $(python) bin/json_test_tmpl.py $< $* > .$*_mfuzz.py
 	mv .$*_mfuzz.py tests/$*_mfuzz.py
 
 tests/%_rfuzz.py: %.rfuzz.pickled
-	PYTHONPATH=targets: $(python) bin/json_test_tmpl.py $< > .$*_rfuzz.py
+	PYTHONPATH=targets: $(python) bin/json_test_tmpl.py $< $* > .$*_rfuzz.py
 	mv .$*_rfuzz.py tests/$*_rfuzz.py
 
+# no utest because tests/$(target)_utest.py exists
 
 #(*) TEXEC
 texec: $(target).texec.$(testsuite)
