@@ -6,7 +6,19 @@ test_target=$(target)_$(testsuite)
 pyminifier=pyminifier
 autopep8=autopep8
 
-gfuzzn=
+all: \
+	microjson.gfuzz.matrix \
+	microjson.mfuzz.matrix \
+	microjson.rfuzz.matrix \
+	microjson.test.matrix \
+	ijson.gfuzz.matrix \
+	ijson.mfuzz.matrix \
+	ijson.rfuzz.matrix \
+	ijson.test.matrix \
+	nayajson.gfuzz.matrix \
+	json.mfuzz.matrix \
+	json.rfuzz.matrix \
+	json.test.matrix
 
 alltargets: targets/microjson.py targets/ijson.py targets/nayajson.py
 
