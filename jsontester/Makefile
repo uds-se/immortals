@@ -69,7 +69,7 @@ texec: $(target).texec.$(testsuite)
 	PYTHONPATH=targets:tests python3 $< -v
 
 texec: $(target).texec.$(testsuite)
-%.texec.utest: tests/%_test.py
+%.texec.utest: tests/%_utest.py
 	PYTHONPATH=targets:tests python3 $< -v
 
 
@@ -93,7 +93,7 @@ coverage: $(target).coverage.$(testsuite)
 	coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.rfuzz
 	mv .$*.coverage.rfuzz $*.coverage.rfuzz
 
-%.coverage.utest: tests/%_test.py targets/nayajson.py
+%.coverage.utest: tests/%_utest.py targets/nayajson.py
 	rm -rf .coverage
 	PYTHONPATH=targets coverage run $<
 	coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.utest
@@ -113,7 +113,7 @@ mutate: $(target).mutate.$(testsuite).log
 	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_rfuzz -e -m | tee .$*.mutate.rfuzz.log
 	mv .$*.mutate.rfuzz.log $*.mutate.rfuzz.log
 
-%.mutate.utest.log: targets/%.py tests/%_mfuzz.py # %.test.pickled
+%.mutate.utest.log: targets/%.py tests/%_utest.py # %.utest.pickled
 	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_test -e -m | tee .$*.mutate.utest.log
 	mv .$*.mutate.utest.log $*.mutate.utest.log
 
