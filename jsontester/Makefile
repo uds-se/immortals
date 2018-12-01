@@ -130,49 +130,61 @@ mstatus: $(target).mstatus.$(testsuite).csv
 tlog: $(target).$(testsuite).tlog
 n=0
 %.gfuzz.tlog: %.mutate.gfuzz.log
-	for i in mutants_$*/*/; do echo $$i | tee -a .$*.gfuzz.tlog; (export PYTHONPATH=$$i; ( $(python) tests/$*_gfuzz.py > $$i/.gfuzz-$(n).log 2>&1; mv $$i/.gfuzz-$(n).log $$i/gfuzz-$(n).log ) & ) ; done
+	for i in mutants_$*/*/; do echo $$i | tee -a .$*.gfuzz.tlog; \
+		(export PYTHONPATH=$$i; ( $(python) tests/$*_gfuzz.py > $$i/.gfuzz-$(n).log 2>&1; mv $$i/.gfuzz-$(n).log $$i/gfuzz-$(n).log ) & ) ; done
 	mv .$*.gfuzz.tlog $*.gfuzz.tlog
 
 %.mfuzz.tlog: %.mutate.mfuzz.log
-	for i in mutants_$*/*/; do echo $$i | tee -a .$*.mfuzz.tlog; (export PYTHONPATH=$$i; ( $(python) tests/$*_mfuzz.py > $$i/.mfuzz-$(n).log 2>&1; mv $$i/.mfuzz-$(n).log $$i/mfuzz-$(n).log ) & ) ; done
+	for i in mutants_$*/*/; do echo $$i | tee -a .$*.mfuzz.tlog; \
+		(export PYTHONPATH=$$i; ( $(python) tests/$*_mfuzz.py > $$i/.mfuzz-$(n).log 2>&1; mv $$i/.mfuzz-$(n).log $$i/mfuzz-$(n).log ) & ) ; done
 	mv .$*.mfuzz.tlog $*.mfuzz.tlog
 
 %.rfuzz.tlog: %.mutate.rfuzz.log
-	for i in mutants_$*/*/; do echo $$i | tee -a .$*.rfuzz.tlog; (export PYTHONPATH=$$i; ( $(python) tests/$*_rfuzz.py > $$i/.rfuzz-$(n).log 2>&1; mv $$i/.rfuzz-$(n).log $$i/rfuzz-$(n).log ) & ) ; done
+	for i in mutants_$*/*/; do echo $$i | tee -a .$*.rfuzz.tlog; \
+		(export PYTHONPATH=$$i; ( $(python) tests/$*_rfuzz.py > $$i/.rfuzz-$(n).log 2>&1; mv $$i/.rfuzz-$(n).log $$i/rfuzz-$(n).log ) & ) ; done
 	mv .$*.rfuzz.tlog $*.rfuzz.tlog
 
 %.test.tlog: %.mutate.test.log
-	for i in mutants_$*/*/; do echo $$i | tee -a .$*.test.tlog; (export PYTHONPATH=$$i; ( $(python) tests/$*_test.py > $$i/.test-$(n).log 2>&1; mv $$i/.test-$(n).log $$i/test-$(n).log ) & ) ; done
+	for i in mutants_$*/*/; do echo $$i | tee -a .$*.test.tlog; \
+		(export PYTHONPATH=$$i; ( $(python) tests/$*_test.py > $$i/.test-$(n).log 2>&1; mv $$i/.test-$(n).log $$i/test-$(n).log ) & ) ; done
 	mv .$*.test.tlog $*.test.tlog
 
 
 #(7) TSUMMARIZE
 tsummarize: $(target).$(testsuite).tsummarize
 %.gfuzz.tsummarize: %.gfuzz.tlog
-	for i in mutants_$*/*/gfuzz-$(n).log; do echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
+	for i in mutants_$*/*/gfuzz-$(n).log; do \
+		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 
 %.mfuzz.tsummarize: %.mfuzz.tlog
-	for i in mutants_$*/*/mfuzz-$(n).log; do echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
+	for i in mutants_$*/*/mfuzz-$(n).log; do \
+		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 
 %.rfuzz.tsummarize: %.rfuzz.tlog
-	for i in mutants_$*/*/rfuzz-$(n).log; do echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
+	for i in mutants_$*/*/rfuzz-$(n).log; do \
+		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 
 %.test.tsummarize: %.test.tlog
-	for i in mutants_$*/*/test-$(n).log; do echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
+	for i in mutants_$*/*/test-$(n).log; do \
+		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 
 #(8) MATRIX
 matrix:	$(target).$(testsuite).matrix
 %.gfuzz.matrix: %.gfuzz.tsummarize
-	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/gfuzz-$(n).log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests.gfuzz
+	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/gfuzz-$(n).log.fail \
+		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests.gfuzz.$(target)
 
 %.mfuzz.matrix: %.mfuzz.tsummarize
-	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/mfuzz-$(n).log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests.mfuzz
+	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/mfuzz-$(n).log.fail \
+		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests.mfuzz.$(target)
 
 %.rfuzz.matrix: %.rfuzz.tsummarize .%.mcount
-	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/rfuzz-$(n).log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests.rfuzz
+	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/rfuzz-$(n).log.fail \
+		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests.rfuzz.$(target)
 
 %.test.matrix: %.test.tsummarize .%.mcount
-	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/test-$(n).log.fail | sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests.test
+	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/test-$(n).log.fail \
+		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > failed_tests.test.$(target)
 
 .$(target).mcount:
 	ls mutants_$(target)/ | sort -rn | head -1 > .$(target).mcount
