@@ -52,13 +52,13 @@ targets/%.py: originals/%.py | targets
 
 #(1) PICKLE
 pickled: $(target).$(testsuite).pickled
-%.gfuzz.pickled: bin/gfuzz.py
+%.gfuzz.pickled: bin/gfuzz.py targets/%.py
 	PYTHONPATH=lib: $(python) bin/gfuzz.py targets/$*.py
 
-%.mfuzz.pickled: bin/mfuzz.py
+%.mfuzz.pickled: bin/mfuzz.py targets/%.py
 	PYTHONPATH=lib: $(python) bin/mfuzz.py targets/$*.py
 
-%.rfuzz.pickled: bin/rfuzz.py
+%.rfuzz.pickled: bin/rfuzz.py targets/%.py
 	PYTHONPATH=lib: $(python) bin/rfuzz.py targets/$*.py
 
 #(2) TEST
@@ -102,19 +102,19 @@ coverage: $(target).coverage.$(testsuite)
 
 %.coverage.mfuzz: tests/%_mfuzz.py
 	rm -rf $*.coverage
-	COVERAGE_FILE=$*.coverage PYTHONPATH=targets coverage run $<
+	COVERAGE_FILE=$*.coverage PYTHONPATH=targets:tests coverage run $<
 	COVERAGE_FILE=$*.coverage coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.mfuzz
 	mv .$*.coverage.mfuzz $*.coverage.mfuzz
 
 %.coverage.rfuzz: tests/%_rfuzz.py
 	rm -rf $*.coverage
-	COVERAGE_FILE=$*.coverage PYTHONPATH=targets coverage run $<
+	COVERAGE_FILE=$*.coverage PYTHONPATH=targets:tests coverage run $<
 	COVERAGE_FILE=$*.coverage coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.rfuzz
 	mv .$*.coverage.rfuzz $*.coverage.rfuzz
 
 %.coverage.utest: tests/%_utest.py targets/%.py
 	rm -rf $*.coverage
-	COVERAGE_FILE=$*.coverage PYTHONPATH=targets coverage run $<
+	COVERAGE_FILE=$*.coverage PYTHONPATH=targets:tests coverage run $<
 	COVERAGE_FILE=$*.coverage coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.utest
 	mv .$*.coverage.utest $*.coverage.utest
 
