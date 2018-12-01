@@ -173,7 +173,7 @@ n=0
 	mv .$*.utest.tlog $*.utest.tlog
 
 .tlog.done:
-	./bin/wait.py
+	./bin/wait.py $(target)
 
 #(7) TSUMMARIZE
 tsummarize: $(target).$(testsuite).tsummarize
