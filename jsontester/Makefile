@@ -1,3 +1,4 @@
+# To find dependencies of a target, use `make $target --debug=basic -n
 python=python3
 target=microjson
 testsuite=gfuzz
