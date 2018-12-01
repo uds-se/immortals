@@ -641,11 +641,6 @@ class TestEncodeBaseStringAscii(TestCase):
     def test_py_encode_basestring_ascii(self):
         self._test_encode_basestring_ascii(json.py_encode_basestring_ascii)
 
-    def test_c_encode_basestring_ascii(self):
-        if not json.c_encode_basestring_ascii:
-            return
-        self._test_encode_basestring_ascii(json.c_encode_basestring_ascii)
-
     def _test_encode_basestring_ascii(self, encode_basestring_ascii):
         fname = encode_basestring_ascii.__name__
         for input_string, expect in CASES:

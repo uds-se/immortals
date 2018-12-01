@@ -566,13 +566,6 @@ from operator import itemgetter
 # Do not import Decimal directly to avoid reload issues
 import decimal
 #from .compat import unichr, binary_type, text_type, string_types, integer_types, PY3
-def _import_speedups():
-    try:
-        from . import _speedups
-        return _speedups.encode_basestring_ascii, _speedups.make_encoder
-    except ImportError:
-        return None, None
-c_encode_basestring_ascii, c_make_encoder = _import_speedups()
 
 #from .decoder import PosInf
 #from .raw_json import RawJSON
@@ -664,7 +657,7 @@ def py_encode_basestring_ascii(s, _PY3=PY3):
 
 
 encode_basestring_ascii = (
-    c_encode_basestring_ascii or py_encode_basestring_ascii)
+    py_encode_basestring_ascii)
 
 class JSONEncoder(object):
     """Extensible JSON <http://json.org> encoder for Python data structures.
@@ -915,18 +908,7 @@ class JSONEncoder(object):
         key_memo = {}
         int_as_string_bitcount = (
             53 if self.bigint_as_string else self.int_as_string_bitcount)
-        if (_one_shot and c_make_encoder is not None
-                and self.indent is None):
-            _iterencode = c_make_encoder(
-                markers, self.default, _encoder, self.indent,
-                self.key_separator, self.item_separator, self.sort_keys,
-                self.skipkeys, self.allow_nan, key_memo, self.use_decimal,
-                self.namedtuple_as_object, self.tuple_as_array,
-                int_as_string_bitcount,
-                self.item_sort_key, self.encoding, self.for_json,
-                self.ignore_nan, decimal.Decimal, self.iterable_as_array)
-        else:
-            _iterencode = _make_iterencode(
+        _iterencode = _make_iterencode(
                 markers, self.default, _encoder, self.indent, floatstr,
                 self.key_separator, self.item_separator, self.sort_keys,
                 self.skipkeys, _one_shot, self.use_decimal,
@@ -1701,42 +1683,6 @@ def loads(s, encoding=None, cls=None, object_hook=None, parse_float=None,
             raise TypeError("use_decimal=True implies parse_float=Decimal")
         kw['parse_float'] = Decimal
     return cls(encoding=encoding, **kw).decode(s)
-
-
-def _toggle_speedups(enabled):
-    from . import decoder as dec
-    from . import encoder as enc
-    from . import scanner as scan
-    c_make_encoder = _import_c_make_encoder()
-    if enabled:
-        dec.scanstring = dec.py_scanstring
-        enc.c_make_encoder = c_make_encoder
-        enc.encode_basestring_ascii = (enc.c_encode_basestring_ascii or
-            enc.py_encode_basestring_ascii)
-        scan.make_scanner = scan.py_make_scanner
-    else:
-        dec.scanstring = dec.py_scanstring
-        enc.c_make_encoder = None
-        enc.encode_basestring_ascii = enc.py_encode_basestring_ascii
-        scan.make_scanner = scan.py_make_scanner
-    dec.make_scanner = scan.make_scanner
-    global _default_decoder
-    _default_decoder = JSONDecoder(
-        encoding=None,
-        object_hook=None,
-        object_pairs_hook=None,
-    )
-    global _default_encoder
-    _default_encoder = JSONEncoder(
-       skipkeys=False,
-       ensure_ascii=True,
-       check_circular=True,
-       allow_nan=True,
-       indent=None,
-       separators=None,
-       encoding='utf-8',
-       default=None,
-   )
 
 def simple_first(kv):
     """Helper function to pass to item_sort_key to sort simple
