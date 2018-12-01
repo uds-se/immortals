@@ -155,18 +155,22 @@ tsummarize: $(target).$(testsuite).tsummarize
 %.gfuzz.tsummarize: %.gfuzz.tlog
 	for i in mutants_$*/*/gfuzz-$(n).log; do \
 		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
+	touch $*.gfuzz.tsummarize
 
 %.mfuzz.tsummarize: %.mfuzz.tlog
 	for i in mutants_$*/*/mfuzz-$(n).log; do \
 		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
+	touch $*.mfuzz.tsummarize
 
 %.rfuzz.tsummarize: %.rfuzz.tlog
 	for i in mutants_$*/*/rfuzz-$(n).log; do \
 		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
+	touch $*.rfuzz.tsummarize
 
 %.test.tsummarize: %.test.tlog
 	for i in mutants_$*/*/test-$(n).log; do \
 		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
+	touch $*.test.tsummarize
 
 #(8) MATRIX
 matrix:	$(target).$(testsuite).matrix
