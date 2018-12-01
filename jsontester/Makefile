@@ -6,42 +6,23 @@ test_target=$(target)_$(testsuite)
 pyminifier=pyminifier
 autopep8=autopep8
 
-all: \
-	microjson.gfuzz.tlog \
-	microjson.mfuzz.tlog \
-	microjson.rfuzz.tlog \
-	microjson.utest.tlog \
-	ijson.gfuzz.tlog \
-	ijson.mfuzz.tlog \
-	ijson.rfuzz.tlog \
-	ijson.utest.tlog \
-	nayajson.gfuzz.tlog \
-	nayajson.mfuzz.tlog \
-	nayajson.rfuzz.tlog \
-	nayajson.utest.tlog \
-	simplejson.gfuzz.tlog \
-	simplejson.mfuzz.tlog \
-	simplejson.rfuzz.tlog \
-	simplejson.utest.tlog
+all:
+	$(MAKE) allmatrix target=microjson && touch .microjson.done
+	$(MAKE) allmatrix target=simplejson && touch .simplejson.done
+	$(MAKE) allmatrix target=ijson && touch .ijson.done
+	$(MAKE) allmatrix target=nayajson && touch .nayajson.done
 
-matrix: \
-	microjson.gfuzz.matrix \
-	microjson.mfuzz.matrix \
-	microjson.rfuzz.matrix \
-	microjson.utest.matrix \
-	ijson.gfuzz.matrix \
-	ijson.mfuzz.matrix \
-	ijson.rfuzz.matrix \
-	ijson.utest.matrix \
-	nayajson.gfuzz.matrix \
-	nayajson.mfuzz.matrix \
-	nayajson.rfuzz.matrix \
-	nayajson.utest.matrix \
-	simplejson.gfuzz.matrix \
-	simplejson.mfuzz.matrix \
-	simplejson.rfuzz.matrix \
-	simplejson.utest.matrix
+mua: \
+	$(target).gfuzz.tlog \
+	$(target).mfuzz.tlog \
+	$(target).rfuzz.tlog \
+	$(target).utest.tlog
 
+allmatrix: \
+	$(target).gfuzz.matrix \
+	$(target).mfuzz.matrix \
+	$(target).rfuzz.matrix \
+	$(target).utest.matrix
 
 alltargets: targets/microjson.py targets/ijson.py targets/nayajson.py targets/simplejson.py
 
