@@ -158,6 +158,11 @@ class TextView(QuietTextView):
         print("\n{}\n".format('-'*80) + "\n".join(snippet) + "\n{}".format('-'*80))
 
     def print_code(self, mutant, number, lineno, o_src, name):
+        def wrap(sr):
+            if isinstance(sr, str):
+                return sr.encode('ascii', 'ignore').decode('ascii')
+            else:
+                return sr #.decode('ascii', 'ignore')
         mutant_src = codegen.to_source(mutant)
         hash_object = hashlib.md5(mutant_src.encode())
         hsh = hash_object.hexdigest()
@@ -165,15 +170,9 @@ class TextView(QuietTextView):
         os.system("mkdir -p ./mutants_%s/%d" % (target, number))
 
         with open('./mutants_%s/%d/%s.py' % (target, number,name), 'w+') as f:
-            if isinstance(mutant_src, str):
-                f.write(mutant_src.encode('ascii', 'ignore').decode('ascii'))
-            else:
-                f.write(mutant_src.decode('ascii', 'ignore'))
+            f.write(wrap(mutant_src))
         with open('./mutants_%s/original.py' % target, 'w+') as f:
-            if isinstance(o_src, str):
-                f.write(o_src.encode('ascii', 'ignore').decode('ascii'))
-            else:
-                f.write(o_src.decode('ascii', 'ignore'))
+            f.write(wrap(o_src))
         mutant_src = codegen.add_line_numbers(mutant_src)
         o_src = codegen.add_line_numbers(o_src)
         osrc_lines = o_src.split("\n")
@@ -184,7 +183,10 @@ class TextView(QuietTextView):
         snippet += ['-------']
         snippet += [osrc_lines[lineno-1]]
         snippet += ['-------']
-        print("\n{}\n".format('-'*80) + "\n".join(snippet) + "\n{}".format('-'*80))
+        try:
+            print("\n{}\n".format('-'*80) + "\n".join([wrap(i) for i in  snippet]) + "\n{}".format('-'*80))
+        except:
+            print(">>>",type(snippet))
 
     def killed(self, time, killer, *args, **kwargs):
         self.level_print(self.time_format(time) + ' ' + self.decorate('killed', 'green') + ' by ' + str(killer),

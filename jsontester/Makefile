@@ -6,6 +6,17 @@ test_target=$(target)_$(testsuite)
 pyminifier=pyminifier
 autopep8=autopep8
 
+.precious: \
+	$(target).utest.tsummarize \
+	$(target).rfuzz.tsummarize \
+	tests/$(target)_mfuzz.py \
+	.$(target).mcount \
+	$(target).mutate.mfuzz.log \
+	$(target).mfuzz.tsummarize \
+	$(target).mutate.rfuzz.log \
+	$(target).mfuzz.pickled \
+	$(target).mutate.utest.log
+
 all:
 	$(MAKE) allmatrix target=microjson && touch .microjson.done
 	$(MAKE) allmatrix target=simplejson && touch .simplejson.done
@@ -71,15 +82,12 @@ texec: $(target).texec.$(testsuite)
 %.texec.gfuzz: tests/%_gfuzz.py
 	PYTHONPATH=targets:tests python3 $< -v
 
-texec: $(target).texec.$(testsuite)
 %.texec.mfuzz: tests/%_mfuzz.py
 	PYTHONPATH=targets:tests python3 $< -v
 
-texec: $(target).texec.$(testsuite)
 %.texec.rfuzz: tests/%_rfuzz.py
 	PYTHONPATH=targets:tests python3 $< -v
 
-texec: $(target).texec.$(testsuite)
 %.texec.utest: tests/%_utest.py
 	PYTHONPATH=targets:tests python3 $< -v
 
@@ -125,7 +133,7 @@ mutate: $(target).mutate.$(testsuite).log
 	mv .$*.mutate.rfuzz.log $*.mutate.rfuzz.log
 
 %.mutate.utest.log: targets/%.py tests/%_utest.py # %.utest.pickled
-	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_test -e -m | tee .$*.mutate.utest.log
+	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_utest -e -m | tee .$*.mutate.utest.log
 	mv .$*.mutate.utest.log $*.mutate.utest.log
 
 #(5) MUTATION-STATUS
@@ -170,7 +178,7 @@ n=0
 
 %.utest.tlog: %.mutate.utest.log
 	for i in mutants_$*/*/; do echo $$i | tee -a .$*.utest.tlog; \
-		(export PYTHONPATH=$$i; ( $(python) tests/$*_test.py > $$i/.utest-$(n).log 2>&1; mv $$i/.utest-$(n).log $$i/utest-$(n).log ) & ) ; done
+		(export PYTHONPATH=$$i; ( $(python) tests/$*_utest.py > $$i/.utest-$(n).log 2>&1; mv $$i/.utest-$(n).log $$i/utest-$(n).log ) & ) ; done
 	mv .$*.utest.tlog $*.utest.tlog
 
 .tlog.done:
