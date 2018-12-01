@@ -24,6 +24,12 @@ allmatrix: \
 	$(target).rfuzz.matrix \
 	$(target).utest.matrix
 
+cleanall:
+	$(MAKE) clean target=microjson
+	$(MAKE) clean target=nayajson
+	$(MAKE) clean target=ijson
+	$(MAKE) clean target=simplejson
+
 alltargets: targets/microjson.py targets/ijson.py targets/nayajson.py targets/simplejson.py
 
 targets:; mkdir -p targets
@@ -219,7 +225,7 @@ matrix:	$(target).$(testsuite).matrix
 # CLEAN
 
 clean:
-	rm *$(testsuite)*
+	rm -rf *.$(testsuite).*
 
 
 #-------------------
