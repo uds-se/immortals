@@ -20,6 +20,21 @@ all: \
 	nayajson.rfuzz.tlog \
 	nayajson.utest.tlog
 
+matrix: \
+	microjson.gfuzz.matrix \
+	microjson.mfuzz.matrix \
+	microjson.rfuzz.matrix \
+	microjson.utest.matrix \
+	ijson.gfuzz.matrix \
+	ijson.mfuzz.matrix \
+	ijson.rfuzz.matrix \
+	ijson.utest.matrix \
+	nayajson.gfuzz.matrix \
+	nayajson.mfuzz.matrix \
+	nayajson.rfuzz.matrix \
+	nayajson.utest.matrix
+
+
 alltargets: targets/microjson.py targets/ijson.py targets/nayajson.py
 
 targets:; mkdir -p targets
@@ -76,27 +91,27 @@ texec: $(target).texec.$(testsuite)
 #(3) COVERAGE
 coverage: $(target).coverage.$(testsuite)
 %.coverage.gfuzz: tests/%_gfuzz.py
-	rm -rf .coverage
-	PYTHONPATH=targets:tests coverage run $<
-	coverage report -m | grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.gfuzz
+	rm -rf $*.coverage
+	COVERAGE_FILE=$*.coverage PYTHONPATH=targets:tests coverage run $<
+	COVERAGE_FILE=$*.coverage coverage report -m | grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.gfuzz
 	mv .$*.coverage.gfuzz $*.coverage.gfuzz
 
 %.coverage.mfuzz: tests/%_mfuzz.py
-	rm -rf .coverage
-	PYTHONPATH=targets coverage run $<
-	coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.mfuzz
+	rm -rf $*.coverage
+	COVERAGE_FILE=$*.coverage PYTHONPATH=targets coverage run $<
+	COVERAGE_FILE=$*.coverage coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.mfuzz
 	mv .$*.coverage.mfuzz $*.coverage.mfuzz
 
 %.coverage.rfuzz: tests/%_rfuzz.py
-	rm -rf .coverage
-	PYTHONPATH=targets coverage run $<
-	coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.rfuzz
+	rm -rf $*.coverage
+	COVERAGE_FILE=$*.coverage PYTHONPATH=targets coverage run $<
+	COVERAGE_FILE=$*.coverage coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.rfuzz
 	mv .$*.coverage.rfuzz $*.coverage.rfuzz
 
 %.coverage.utest: tests/%_utest.py targets/nayajson.py
-	rm -rf .coverage
-	PYTHONPATH=targets coverage run $<
-	coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.utest
+	rm -rf $*.coverage
+	COVERAGE_FILE=$*.coverage PYTHONPATH=targets coverage run $<
+	COVERAGE_FILE=$*.coverage coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.utest
 	mv .$*.coverage.utest $*.coverage.utest
 
 #(4) MUTATE
@@ -162,25 +177,27 @@ n=0
 		(export PYTHONPATH=$$i; ( $(python) tests/$*_test.py > $$i/.utest-$(n).log 2>&1; mv $$i/.utest-$(n).log $$i/utest-$(n).log ) & ) ; done
 	mv .$*.utest.tlog $*.utest.tlog
 
+.tlog.done:
+	./bin/wait.py
 
 #(7) TSUMMARIZE
 tsummarize: $(target).$(testsuite).tsummarize
-%.gfuzz.tsummarize: %.gfuzz.tlog
+%.gfuzz.tsummarize: %.gfuzz.tlog .tlog.done
 	for i in mutants_$*/*/gfuzz-$(n).log; do \
 		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 	touch $*.gfuzz.tsummarize
 
-%.mfuzz.tsummarize: %.mfuzz.tlog
+%.mfuzz.tsummarize: %.mfuzz.tlog .tlog.done
 	for i in mutants_$*/*/mfuzz-$(n).log; do \
 		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 	touch $*.mfuzz.tsummarize
 
-%.rfuzz.tsummarize: %.rfuzz.tlog
+%.rfuzz.tsummarize: %.rfuzz.tlog .tlog.done
 	for i in mutants_$*/*/rfuzz-$(n).log; do \
 		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 	touch $*.rfuzz.tsummarize
 
-%.utest.tsummarize: %.utest.tlog
+%.utest.tsummarize: %.utest.tlog .tlog.done
 	for i in mutants_$*/*/utest-$(n).log; do \
 		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 	touch $*.utest.tsummarize
