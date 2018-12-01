@@ -1,5 +1,5 @@
-from __future__ import absolute_import
-__version__ = '3.16.1'
+#from __future__ import absolute_import
+#__version__ = '3.16.1'
 __all__ = [
     'dump', 'dumps', 'load', 'loads',
     'JSONDecoder', 'JSONDecodeError', 'JSONEncoder',
@@ -7,7 +7,7 @@ __all__ = [
     'decoder', 'encoder', 'reload_module'
 ]
 
-__author__ = 'Bob Ippolito <bob@redivi.com>'
+#__author__ = 'Bob Ippolito <bob@redivi.com>'
 
 from decimal import Decimal
 

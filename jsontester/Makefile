@@ -24,16 +24,16 @@ all:
 	$(MAKE) allmatrix target=nayajson && touch .nayajson.done
 
 mua: \
+	$(target).utest.tlog \
 	$(target).gfuzz.tlog \
 	$(target).mfuzz.tlog \
-	$(target).rfuzz.tlog \
-	$(target).utest.tlog
+	$(target).rfuzz.tlog
 
 allmatrix: \
+	$(target).utest.matrix \
 	$(target).gfuzz.matrix \
 	$(target).mfuzz.matrix \
-	$(target).rfuzz.matrix \
-	$(target).utest.matrix
+	$(target).rfuzz.matrix
 
 cleanall:
 	$(MAKE) clean target=microjson
