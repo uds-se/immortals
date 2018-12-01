@@ -195,8 +195,8 @@ matrix:	$(target).$(testsuite).matrix
 		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > .$(target).test.matrix
 	mv .$(target).test.matrix $(target).test.matrix
 
-.$(target).mcount:
-	ls mutants_$(target)/ | sort -rn | head -1 > .$(target).mcount
+.%.mcount: %.mutate.$(testsuite).log
+	ls mutants_$*/ | sort -rn | head -1 > .$*.mcount
 
 # CLEAN
 
