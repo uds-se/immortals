@@ -18,7 +18,11 @@ all: \
 	nayajson.gfuzz.tlog \
 	nayajson.mfuzz.tlog \
 	nayajson.rfuzz.tlog \
-	nayajson.utest.tlog
+	nayajson.utest.tlog \
+	simplejson.gfuzz.tlog \
+	simplejson.mfuzz.tlog \
+	simplejson.rfuzz.tlog \
+	simplejson.utest.tlog
 
 matrix: \
 	microjson.gfuzz.matrix \
@@ -32,10 +36,14 @@ matrix: \
 	nayajson.gfuzz.matrix \
 	nayajson.mfuzz.matrix \
 	nayajson.rfuzz.matrix \
-	nayajson.utest.matrix
+	nayajson.utest.matrix \
+	simplejson.gfuzz.matrix \
+	simplejson.mfuzz.matrix \
+	simplejson.rfuzz.matrix \
+	simplejson.utest.matrix
 
 
-alltargets: targets/microjson.py targets/ijson.py targets/nayajson.py
+alltargets: targets/microjson.py targets/ijson.py targets/nayajson.py targets/simplejson.py
 
 targets:; mkdir -p targets
 
@@ -108,7 +116,7 @@ coverage: $(target).coverage.$(testsuite)
 	COVERAGE_FILE=$*.coverage coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.rfuzz
 	mv .$*.coverage.rfuzz $*.coverage.rfuzz
 
-%.coverage.utest: tests/%_utest.py targets/nayajson.py
+%.coverage.utest: tests/%_utest.py targets/%.py
 	rm -rf $*.coverage
 	COVERAGE_FILE=$*.coverage PYTHONPATH=targets coverage run $<
 	COVERAGE_FILE=$*.coverage coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.utest
