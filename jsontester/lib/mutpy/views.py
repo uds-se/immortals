@@ -165,9 +165,15 @@ class TextView(QuietTextView):
         os.system("mkdir -p ./mutants_%s/%d" % (target, number))
 
         with open('./mutants_%s/%d/%s.py' % (target, number,name), 'w+') as f:
-            f.write(mutant_src)
+            if isinstance(mutant_src, str):
+                f.write(mutant_src.encode('ascii', 'ignore').decode('ascii'))
+            else:
+                f.write(mutant_src.decode('ascii', 'ignore'))
         with open('./mutants_%s/original.py' % target, 'w+') as f:
-            f.write(o_src)
+            if isinstance(o_src, str):
+                f.write(o_src.encode('ascii', 'ignore').decode('ascii'))
+            else:
+                f.write(o_src.decode('ascii', 'ignore'))
         mutant_src = codegen.add_line_numbers(mutant_src)
         o_src = codegen.add_line_numbers(o_src)
         osrc_lines = o_src.split("\n")
