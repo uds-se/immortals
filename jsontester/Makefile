@@ -7,18 +7,18 @@ pyminifier=pyminifier
 autopep8=autopep8
 
 all: \
-	microjson.gfuzz.matrix \
-	microjson.mfuzz.matrix \
-	microjson.rfuzz.matrix \
-	microjson.test.matrix \
-	ijson.gfuzz.matrix \
-	ijson.mfuzz.matrix \
-	ijson.rfuzz.matrix \
-	ijson.test.matrix \
-	nayajson.gfuzz.matrix \
-	json.mfuzz.matrix \
-	json.rfuzz.matrix \
-	json.test.matrix
+	microjson.gfuzz.tlog \
+	microjson.mfuzz.tlog \
+	microjson.rfuzz.tlog \
+	microjson.utest.tlog \
+	ijson.gfuzz.tlog \
+	ijson.mfuzz.tlog \
+	ijson.rfuzz.tlog \
+	ijson.utest.tlog \
+	nayajson.gfuzz.tlog \
+	nayajson.mfuzz.tlog \
+	nayajson.rfuzz.tlog \
+	nayajson.utest.tlog
 
 alltargets: targets/microjson.py targets/ijson.py targets/nayajson.py
 
@@ -69,7 +69,7 @@ texec: $(target).texec.$(testsuite)
 	PYTHONPATH=targets:tests python3 $< -v
 
 texec: $(target).texec.$(testsuite)
-%.texec.test: tests/%_test.py
+%.texec.utest: tests/%_test.py
 	PYTHONPATH=targets:tests python3 $< -v
 
 
@@ -93,11 +93,11 @@ coverage: $(target).coverage.$(testsuite)
 	coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.rfuzz
 	mv .$*.coverage.rfuzz $*.coverage.rfuzz
 
-%.coverage.test: tests/%_test.py targets/nayajson.py
+%.coverage.utest: tests/%_test.py targets/nayajson.py
 	rm -rf .coverage
 	PYTHONPATH=targets coverage run $<
-	coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.test
-	mv .$*.coverage.test $*.coverage.test
+	coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.utest
+	mv .$*.coverage.utest $*.coverage.utest
 
 #(4) MUTATE
 mutate: $(target).mutate.$(testsuite).log
@@ -113,9 +113,9 @@ mutate: $(target).mutate.$(testsuite).log
 	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_rfuzz -e -m | tee .$*.mutate.rfuzz.log
 	mv .$*.mutate.rfuzz.log $*.mutate.rfuzz.log
 
-%.mutate.test.log: targets/%.py tests/%_mfuzz.py # %.test.pickled
-	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_test -e -m | tee .$*.mutate.test.log
-	mv .$*.mutate.test.log $*.mutate.test.log
+%.mutate.utest.log: targets/%.py tests/%_mfuzz.py # %.test.pickled
+	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_test -e -m | tee .$*.mutate.utest.log
+	mv .$*.mutate.utest.log $*.mutate.utest.log
 
 #(5) MUTATION-STATUS
 mstatus: $(target).mstatus.$(testsuite).csv
@@ -134,10 +134,10 @@ mstatus: $(target).mstatus.$(testsuite).csv
 	cat .$*.rfuzz.info | sed -e 's/^   - \[# *\([0-9]*\)\] \([A-Z]\{3\}\) \([^:]*:[0-9]*\) *: *.\[.*\]/\1,\2,\3,/g' > .$*.mstatus.rfuzz.csv
 	mv .$*.mstatus.rfuzz.csv $*.mstatus.rfuzz.csv
 
-%.mstatus.test.csv: %.mutate.test.log
-	cat $*.mutate.test.log | sed -e 1,6d| grep -e '\(\[........s\]\|$*:.*:\)' | paste - - > .$*.test.info
-	cat .$*.test.info | sed -e 's/^   - \[# *\([0-9]*\)\] \([A-Z]\{3\}\) \([^:]*:[0-9]*\) *: *.\[.*\]/\1,\2,\3,/g' > .$*.mstatus.test.csv
-	mv .$*.mstatus.test.csv $*.mstatus.test.csv
+%.mstatus.utest.csv: %.mutate.utest.log
+	cat $*.mutate.utest.log | sed -e 1,6d| grep -e '\(\[........s\]\|$*:.*:\)' | paste - - > .$*.utest.info
+	cat .$*.utest.info | sed -e 's/^   - \[# *\([0-9]*\)\] \([A-Z]\{3\}\) \([^:]*:[0-9]*\) *: *.\[.*\]/\1,\2,\3,/g' > .$*.mstatus.utest.csv
+	mv .$*.mstatus.utest.csv $*.mstatus.utest.csv
 
 #(6) TLOG
 tlog: $(target).$(testsuite).tlog
@@ -157,10 +157,10 @@ n=0
 		(export PYTHONPATH=$$i; ( $(python) tests/$*_rfuzz.py > $$i/.rfuzz-$(n).log 2>&1; mv $$i/.rfuzz-$(n).log $$i/rfuzz-$(n).log ) & ) ; done
 	mv .$*.rfuzz.tlog $*.rfuzz.tlog
 
-%.test.tlog: %.mutate.test.log
-	for i in mutants_$*/*/; do echo $$i | tee -a .$*.test.tlog; \
-		(export PYTHONPATH=$$i; ( $(python) tests/$*_test.py > $$i/.test-$(n).log 2>&1; mv $$i/.test-$(n).log $$i/test-$(n).log ) & ) ; done
-	mv .$*.test.tlog $*.test.tlog
+%.utest.tlog: %.mutate.utest.log
+	for i in mutants_$*/*/; do echo $$i | tee -a .$*.utest.tlog; \
+		(export PYTHONPATH=$$i; ( $(python) tests/$*_test.py > $$i/.utest-$(n).log 2>&1; mv $$i/.utest-$(n).log $$i/utest-$(n).log ) & ) ; done
+	mv .$*.utest.tlog $*.utest.tlog
 
 
 #(7) TSUMMARIZE
@@ -180,10 +180,10 @@ tsummarize: $(target).$(testsuite).tsummarize
 		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 	touch $*.rfuzz.tsummarize
 
-%.test.tsummarize: %.test.tlog
-	for i in mutants_$*/*/test-$(n).log; do \
+%.utest.tsummarize: %.utest.tlog
+	for i in mutants_$*/*/utest-$(n).log; do \
 		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
-	touch $*.test.tsummarize
+	touch $*.utest.tsummarize
 
 #(8) MATRIX
 matrix:	$(target).$(testsuite).matrix
@@ -202,10 +202,10 @@ matrix:	$(target).$(testsuite).matrix
 		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > .$(target).rfuzz.matrix
 	mv .$(target).rfuzz.matrix $(target).rfuzz.matrix
 
-%.test.matrix: %.test.tsummarize .%.mcount
-	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/test-$(n).log.fail \
-		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > .$(target).test.matrix
-	mv .$(target).test.matrix $(target).test.matrix
+%.utest.matrix: %.utest.tsummarize .%.mcount
+	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/utest-$(n).log.fail \
+		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > .$(target).utest.matrix
+	mv .$(target).utest.matrix $(target).utest.matrix
 
 .%.mcount: %.mutate.$(testsuite).log
 	ls mutants_$*/ | sort -rn | head -1 > .$*.mcount
