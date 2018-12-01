@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     s = "\n".join([method_str % (i, repr(s), i) for i,s in enumerate(strings)])
     e = "\n".join([emethod_str % (i, repr(e), i) for i,e in enumerate(estrings)])
-    cls = cls_str % (sys.argv[1], 'microjson', s, e)
+    cls = cls_str % (sys.argv[1], sys.argv[2], s, e)
     return cls
 
 import sys

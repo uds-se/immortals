@@ -47,7 +47,7 @@ pickled: $(target).$(testsuite).pickled
 #(2) TEST
 test: tests/$(target)_$(testsuite).py
 tests/%_gfuzz.py: %.gfuzz.pickled
-	PYTHONPATH=targets: $(python) bin/json_test_tmpl.py $< > .$*_gfuzz.py
+	PYTHONPATH=targets: $(python) bin/json_test_tmpl.py $< $* > .$*_gfuzz.py
 	mv .$*_gfuzz.py tests/$*_gfuzz.py
 
 tests/%_mfuzz.py: %.mfuzz.pickled
