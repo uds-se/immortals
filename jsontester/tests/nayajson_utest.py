@@ -1,3 +1,4 @@
+import timeout_decorator
 from io import StringIO
 import json
 import unittest
@@ -36,6 +37,7 @@ class TestJsonTokenization(unittest.TestCase):
         self.assertEqual(expected, token)
         self.assertEqual(ttype, TOKEN_TYPE.STRING)
 
+    @timeout_decorator.timeout(10)
     def test_number_parsing(self):
         self.assertNumberEquals(0, "0")
         self.assertNumberEquals(0.5, "0.5")
@@ -58,6 +60,7 @@ class TestJsonTokenization(unittest.TestCase):
         self.assertRaises(ValueError, self.tokenize_single_token, "3.6ea")
         self.assertRaises(ValueError, self.tokenize_single_token, "67.8e+a")
 
+    @timeout_decorator.timeout(10)
     def test_operator_parsing(self):
         self.assertOperatorEquals("{", "{")
         self.assertOperatorEquals("}", "}")
@@ -66,6 +69,7 @@ class TestJsonTokenization(unittest.TestCase):
         self.assertOperatorEquals(":", ":")
         self.assertOperatorEquals(",", ",")
 
+    @timeout_decorator.timeout(10)
     def test_string_parsing(self):
         self.assertStringEquals("word", "word")
         self.assertStringEquals("with\tescape", "with\\tescape")
@@ -86,6 +90,7 @@ class TestJsonTokenization(unittest.TestCase):
         self.assertRaises(ValueError, self.tokenize_single_token, "\"\\!\"")
         self.assertRaises(ValueError, self.tokenize_single_token, "\"\\u!\"")
 
+    @timeout_decorator.timeout(10)
     def test_sequence(self):
         result = [token for token in tokenize(StringIO("123 \"abc\":{}"))]
         self.assertEqual(result, [(2, 123), (1, 'abc'), (0, ':'), (0, '{'), (0, '}')])
@@ -140,6 +145,7 @@ class TestJsonTokenization(unittest.TestCase):
         self.assertRaises(ValueError, self.tokenize_sequence, "23.9e10true")
         self.assertRaises(ValueError, self.tokenize_sequence, "\"test\"56")
 
+    @timeout_decorator.timeout(10)
     def test_arrays(self):
         arr = parse_string('[]')
         self.assertListEqual(arr, [])
@@ -151,6 +157,7 @@ class TestJsonTokenization(unittest.TestCase):
         self.assertRaises(ValueError, parse_string, '["People", "Places" "Things"]')
         self.assertRaises(ValueError, parse_string, '["People", "Places"] "Things"]')
 
+    @timeout_decorator.timeout(10)
     def test_objects(self):
         obj = parse_string('{"key1":"value1"}')
         self.assertDictEqual(obj, {"key1": "value1"})
