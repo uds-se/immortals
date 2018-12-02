@@ -254,19 +254,19 @@ simplejson.%.lst: tests/simplejson_%.py
 
 matrix:	$(target).$(testsuite).matrix
 %.gfuzz.matrix: %.gfuzz.prematrix %.gfuzz.lst
-	python3 ./bin/tomatrix.py $*.gfuzz.lst $*.gfuzz.matrix
+	python3 ./bin/tomatrix.py $*.gfuzz.lst $*.gfuzz.prematrix
 	mv .$(target).gfuzz.matrix $(target).gfuzz.matrix
 
 %.mfuzz.matrix: %.mfuzz.prematrix %.mfuzz.lst
-	python3 ./bin/tomatrix.py $*.mfuzz.lst $*.mfuzz.matrix
+	python3 ./bin/tomatrix.py $*.mfuzz.lst $*.mfuzz.prematrix
 	mv .$(target).mfuzz.matrix $(target).mfuzz.matrix
 
 %.rfuzz.matrix: %.rfuzz.prematrix %.rfuzz.lst
-	python3 ./bin/tomatrix.py $*.rfuzz.lst $*.rfuzz.matrix
+	python3 ./bin/tomatrix.py $*.rfuzz.lst $*.rfuzz.prematrix
 	mv .$(target).rfuzz.matrix $(target).rfuzz.matrix
 
 %.utest.matrix: %.utest.prematrix %.utest.lst
-	python3 ./bin/tomatrix.py $*.utest.lst $*.utest.matrix
+	python3 ./bin/tomatrix.py $*.utest.lst $*.utest.prematrix
 	mv .$(target).utest.matrix $(target).utest.matrix
 
 #
