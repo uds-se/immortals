@@ -181,56 +181,93 @@ n=0
 		(export PYTHONPATH=$$i; ( $(python) tests/$*_utest.py > $$i/.utest-$(n).log 2>&1; mv $$i/.utest-$(n).log $$i/utest-$(n).log ) & ) ; done
 	mv .$*.utest.tlog $*.utest.tlog
 
-.tlog.done:
-	./bin/wait.py $(target)
+.tlog.%.done:
+	./bin/wait.py $*
+	touch .tlog.$*.done
 
 #(7) TSUMMARIZE
 tsummarize: $(target).$(testsuite).tsummarize
-%.gfuzz.tsummarize: %.gfuzz.tlog .tlog.done
+%.gfuzz.tsummarize: %.gfuzz.tlog .tlog.%.done
 	for i in mutants_$*/*/gfuzz-$(n).log; do \
 		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 	touch $*.gfuzz.tsummarize
 
-%.mfuzz.tsummarize: %.mfuzz.tlog .tlog.done
+%.mfuzz.tsummarize: %.mfuzz.tlog .tlog.%.done
 	for i in mutants_$*/*/mfuzz-$(n).log; do \
 		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 	touch $*.mfuzz.tsummarize
 
-%.rfuzz.tsummarize: %.rfuzz.tlog .tlog.done
+%.rfuzz.tsummarize: %.rfuzz.tlog .tlog.%.done
 	for i in mutants_$*/*/rfuzz-$(n).log; do \
 		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 	touch $*.rfuzz.tsummarize
 
-%.utest.tsummarize: %.utest.tlog .tlog.done
+%.utest.tsummarize: %.utest.tlog .tlog.%.done
 	for i in mutants_$*/*/utest-$(n).log; do \
 		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 	touch $*.utest.tsummarize
 
-#(8) MATRIX
-matrix:	$(target).$(testsuite).matrix
-%.gfuzz.matrix: %.gfuzz.tsummarize .%.mcount
+#(8) PREMATRIX
+prematrix:	$(target).$(testsuite).prematrix
+%.gfuzz.prematrix: %.gfuzz.tsummarize .%.mcount
 	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/gfuzz-$(n).log.fail \
-		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > .$(target).gfuzz.matrix
-	mv .$(target).gfuzz.matrix $(target).gfuzz.matrix
+		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > .$(target).gfuzz.prematrix
+	mv .$(target).gfuzz.prematrix $(target).gfuzz.prematrix
 
-%.mfuzz.matrix: %.mfuzz.tsummarize .%.mcount
+%.mfuzz.prematrix: %.mfuzz.tsummarize .%.mcount
 	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/mfuzz-$(n).log.fail \
-		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > .$(target).mfuzz.matrix
-	mv .$(target).mfuzz.matrix $(target).mfuzz.matrix
+		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > .$(target).mfuzz.prematrix
+	mv .$(target).mfuzz.prematrix $(target).mfuzz.prematrix
 
-%.rfuzz.matrix: %.rfuzz.tsummarize .%.mcount
+%.rfuzz.prematrix: %.rfuzz.tsummarize .%.mcount
 	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/rfuzz-$(n).log.fail \
-		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > .$(target).rfuzz.matrix
-	mv .$(target).rfuzz.matrix $(target).rfuzz.matrix
+		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > .$(target).rfuzz.prematrix
+	mv .$(target).rfuzz.prematrix $(target).rfuzz.prematrix
 
-%.utest.matrix: %.utest.tsummarize .%.mcount
+%.utest.prematrix: %.utest.tsummarize .%.mcount
 	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/utest-$(n).log.fail \
-		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > .$(target).utest.matrix
-	mv .$(target).utest.matrix $(target).utest.matrix
+		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > .$(target).utest.prematrix
+	mv .$(target).utest.prematrix $(target).utest.prematrix
 
 .%.mcount: %.mutate.$(testsuite).log
 	ls mutants_$*/ | sort -rn | head -1 > .$*.mcount
 
+# PROCESS
+
+microjson.%.lst: tests/microjson_%.py
+	./bin/extract_tests.sh $< > .microjson.$*.lst
+	mv .microjson.$*.lst microjson.$*.lst
+
+ijson.%.lst: tests/ijson_%.py
+	./bin/extract_tests.sh $< > .ijson.$*.lst
+	mv .ijson.$*.lst ijson.$*.lst
+
+nayajson.%.lst: tests/nayajson_%.py
+	./bin/extract_tests.sh $< > .nayajson.$*.lst
+	mv .nayajson.$*.lst nayajson.$*.lst
+
+simplejson.%.lst: tests/simplejson_%.py
+	./bin/extract_tests.sh $< > .simplejson.$*.lst
+	mv .simplejson.$*.lst simplejson.$*.lst
+
+matrix:	$(target).$(testsuite).matrix
+%.gfuzz.matrix: %.gfuzz.prematrix %.gfuzz.lst
+	python3 ./bin/tomatrix.py %*.gfuzz.lst $*.gfuzz.matrix
+	mv .$(target).gfuzz.matrix $(target).gfuzz.matrix
+
+%.mfuzz.matrix: %.mfuzz.prematrix %.mfuzz.lst
+	python3 ./bin/tomatrix.py %*.mfuzz.lst $*.mfuzz.matrix
+	mv .$(target).mfuzz.matrix $(target).mfuzz.matrix
+
+%.rfuzz.matrix: %.rfuzz.prematrix %.rfuzz.lst
+	python3 ./bin/tomatrix.py %*.rfuzz.lst $*.rfuzz.matrix
+	mv .$(target).rfuzz.matrix $(target).rfuzz.matrix
+
+%.utest.matrix: %.utest.prematrix %.utest.lst
+	python3 ./bin/tomatrix.py %*.utest.lst $*.utest.matrix
+	mv .$(target).utest.matrix $(target).utest.matrix
+
+#
 # CLEAN
 
 clean:
