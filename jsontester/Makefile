@@ -130,11 +130,11 @@ mutate: $(target).mutate.$(testsuite).log
 	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_mfuzz -e -m | tee .$*.mutate.mfuzz.log
 	mv .$*.mutate.mfuzz.log $*.mutate.mfuzz.log
 
-%.mutate.rfuzz.log: targets/%.py tests/%_mfuzz.py %.rfuzz.pickled
+%.mutate.rfuzz.log: targets/%.py tests/%_rfuzz.py %.rfuzz.pickled
 	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_rfuzz -e -m | tee .$*.mutate.rfuzz.log
 	mv .$*.mutate.rfuzz.log $*.mutate.rfuzz.log
 
-%.mutate.utest.log: targets/%.py tests/%_utest.py %.utest.pickled
+%.mutate.utest.log: targets/%.py tests/%_utest.py
 	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_utest -e -m | tee .$*.mutate.utest.log
 	mv .$*.mutate.utest.log $*.mutate.utest.log
 

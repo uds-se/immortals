@@ -54,7 +54,7 @@ if __name__ == "__main__":
     """
 
     emethod_str = """
-    @timeout_decorator.timeout(10)
+    @timeout_decorator.timeout(1)
     def test_err_%d(self):
         # %s
         js, serr = E_PARSE[%d]
