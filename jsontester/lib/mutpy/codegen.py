@@ -385,6 +385,9 @@ class AbstractSourceGenerator(ast.NodeVisitor):
             write_comma()
             if keyword.arg:
                 self.write(keyword.arg + '=')
+            else:
+                if keyword.value:
+                    self.write('**')
             self.visit(keyword.value)
         if self._is_node_args_valid(node, 'starargs'):
             write_comma()
@@ -394,6 +397,7 @@ class AbstractSourceGenerator(ast.NodeVisitor):
             write_comma()
             self.write('**')
             self.visit(node.kwargs)
+
         self.write(')')
 
     def visit_Name(self, node):
