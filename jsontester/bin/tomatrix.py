@@ -7,7 +7,7 @@ prematrix = sys.argv[2] #microjson.rfuzz.matrix
 lines = open(prematrix).readlines()
 
 for line in lines:
-    mutant, *tests_ = line.split(' ')
+    mutant, *tests_ = line.strip().split(' ')
     my_tests = set(tests_)
     print("%s,%s" %(mutant, ','.join([('1' if t in my_tests else '0') for t in all_tests])))
 

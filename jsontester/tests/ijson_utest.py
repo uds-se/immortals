@@ -126,11 +126,11 @@ class Parse(unittest.TestCase):
         events = list(ijson.basic_parse(BytesIO(JSON)))
         self.assertEqual(events, JSON_EVENTS)
 
-    @timeout_decorator.timeout(10)
-    def test_basic_parse_threaded(self):
-        thread = threading.Thread(target=self.test_basic_parse)
-        thread.start()
-        thread.join()
+    #@timeout_decorator.timeout(10)
+    #def test_basic_parse_threaded(self):
+    #    thread = threading.Thread(target=self.test_basic_parse)
+    #    thread.start()
+    #    thread.join()
 
     @timeout_decorator.timeout(10)
     def test_scalar(self):
