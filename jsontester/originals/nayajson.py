@@ -539,6 +539,8 @@ def __parse(token_stream, first_token):
         else:
             raise ValueError("JSON Object not properly closed") from e
 
+def from_json(s):
+    return parse_string(s)
 
 #def stream_array(token_stream):
 #    token_type, token = next(token_stream)
