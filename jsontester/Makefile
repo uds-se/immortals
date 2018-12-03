@@ -96,26 +96,26 @@ texec: $(target).texec.$(testsuite)
 
 #(3) COVERAGE
 coverage: $(target).coverage.$(testsuite)
-%.coverage.gfuzz: tests/%_gfuzz.py
-	rm -rf $*.coverage
+%.coverage.gfuzz: tests/%_gfuzz.py %.gfuzz.pickled
+	rm -rf $*.coverage.gfuzz
 	COVERAGE_FILE=$*.coverage.gfuzz PYTHONPATH=targets:tests coverage run $<
 	COVERAGE_FILE=$*.coverage.gfuzz coverage report -m | grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.gfuzz
 	mv .$*.coverage.gfuzz $*.coverage.gfuzz
 
-%.coverage.mfuzz: tests/%_mfuzz.py
-	rm -rf $*.coverage
+%.coverage.mfuzz: tests/%_mfuzz.py %.mfuzz.pickled
+	rm -rf $*.coverage.mfuzz
 	COVERAGE_FILE=$*.coverage.mfuzz PYTHONPATH=targets:tests coverage run $<
 	COVERAGE_FILE=$*.coverage.mfuzz coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.mfuzz
 	mv .$*.coverage.mfuzz $*.coverage.mfuzz
 
-%.coverage.rfuzz: tests/%_rfuzz.py
-	rm -rf $*.coverage
+%.coverage.rfuzz: tests/%_rfuzz.py %.rfuzz.pickled
+	rm -rf $*.coverage.rfuzz
 	COVERAGE_FILE=$*.coverage.rfuzz PYTHONPATH=targets:tests coverage run $<
 	COVERAGE_FILE=$*.coverage.rfuzz coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.rfuzz
 	mv .$*.coverage.rfuzz $*.coverage.rfuzz
 
 %.coverage.utest: tests/%_utest.py targets/%.py
-	rm -rf $*.coverage
+	rm -rf $*.coverage.utest
 	COVERAGE_FILE=$*.coverage.utest PYTHONPATH=targets:tests coverage run $<
 	COVERAGE_FILE=$*.coverage.utest coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.utest
 	mv .$*.coverage.utest $*.coverage.utest
