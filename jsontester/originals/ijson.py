@@ -342,3 +342,8 @@ def basic_parse(file, buf_size=BUFSIZE):
     else:
         raise JSONError('Additional data')
 
+import io
+def from_json(s):
+    fs = io.StringIO(s)
+    return list(basic_parse(fs))
+
