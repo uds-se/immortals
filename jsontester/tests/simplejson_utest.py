@@ -145,6 +145,7 @@ def default_iterable(obj):
 
 class TestCheckCircular(TestCase):
     def test_circular_dict(self):
+        dct1, dct2, dct3, dct4 = _dicts()
         dct = {}
         dct['a'] = dct
         self.assertRaises(ValueError, json.dumps, dct)
@@ -155,6 +156,7 @@ class TestCheckCircular(TestCase):
         self.assertRaises(ValueError, json.dumps, lst)
 
     def test_circular_composite(self):
+        dct1, dct2, dct3, dct4 = _dicts()
         dct2 = {}
         dct2['a'] = []
         dct2['a'].append(dct2)
@@ -618,30 +620,30 @@ class TestDump(TestCase):
 #import simplejson.encoder
 #from simplejson.compat import b
 
-CASES = [
-    (u'/\\"\ucafe\ubabe\uab98\ufcde\ubcda\uef4a\x08\x0c\n\r\t`1~!@#$%^&*()_+-=[]{}|;:\',./<>?', '"/\\\\\\"\\ucafe\\ubabe\\uab98\\ufcde\\ubcda\\uef4a\\b\\f\\n\\r\\t`1~!@#$%^&*()_+-=[]{}|;:\',./<>?"'),
-    (u'\u0123\u4567\u89ab\ucdef\uabcd\uef4a', '"\\u0123\\u4567\\u89ab\\ucdef\\uabcd\\uef4a"'),
-    (u'controls', '"controls"'),
-    (u'\x08\x0c\n\r\t', '"\\b\\f\\n\\r\\t"'),
-    (u'{"object with 1 member":["array with 1 element"]}', '"{\\"object with 1 member\\":[\\"array with 1 element\\"]}"'),
-    (u' s p a c e d ', '" s p a c e d "'),
-    (u'\U0001d120', '"\\ud834\\udd20"'),
-    (u'\u03b1\u03a9', '"\\u03b1\\u03a9"'),
-    (b('\xce\xb1\xce\xa9'), '"\\u03b1\\u03a9"'),
-    (u'\u03b1\u03a9', '"\\u03b1\\u03a9"'),
-    (b('\xce\xb1\xce\xa9'), '"\\u03b1\\u03a9"'),
-    (u'\u03b1\u03a9', '"\\u03b1\\u03a9"'),
-    (u'\u03b1\u03a9', '"\\u03b1\\u03a9"'),
-    (u"`1~!@#$%^&*()_+-={':[,]}|;.</>?", '"`1~!@#$%^&*()_+-={\':[,]}|;.</>?"'),
-    (u'\x08\x0c\n\r\t', '"\\b\\f\\n\\r\\t"'),
-    (u'\u0123\u4567\u89ab\ucdef\uabcd\uef4a', '"\\u0123\\u4567\\u89ab\\ucdef\\uabcd\\uef4a"'),
-]
-
 class TestEncodeBaseStringAscii(TestCase):
     def test_py_encode_basestring_ascii(self):
         self._test_encode_basestring_ascii(json.py_encode_basestring_ascii)
 
     def _test_encode_basestring_ascii(self, encode_basestring_ascii):
+        CASES = [
+            (u'/\\"\ucafe\ubabe\uab98\ufcde\ubcda\uef4a\x08\x0c\n\r\t`1~!@#$%^&*()_+-=[]{}|;:\',./<>?', '"/\\\\\\"\\ucafe\\ubabe\\uab98\\ufcde\\ubcda\\uef4a\\b\\f\\n\\r\\t`1~!@#$%^&*()_+-=[]{}|;:\',./<>?"'),
+            (u'\u0123\u4567\u89ab\ucdef\uabcd\uef4a', '"\\u0123\\u4567\\u89ab\\ucdef\\uabcd\\uef4a"'),
+            (u'controls', '"controls"'),
+            (u'\x08\x0c\n\r\t', '"\\b\\f\\n\\r\\t"'),
+            (u'{"object with 1 member":["array with 1 element"]}', '"{\\"object with 1 member\\":[\\"array with 1 element\\"]}"'),
+            (u' s p a c e d ', '" s p a c e d "'),
+            (u'\U0001d120', '"\\ud834\\udd20"'),
+            (u'\u03b1\u03a9', '"\\u03b1\\u03a9"'),
+            (b('\xce\xb1\xce\xa9'), '"\\u03b1\\u03a9"'),
+            (u'\u03b1\u03a9', '"\\u03b1\\u03a9"'),
+            (b('\xce\xb1\xce\xa9'), '"\\u03b1\\u03a9"'),
+            (u'\u03b1\u03a9', '"\\u03b1\\u03a9"'),
+            (u'\u03b1\u03a9', '"\\u03b1\\u03a9"'),
+            (u"`1~!@#$%^&*()_+-={':[,]}|;.</>?", '"`1~!@#$%^&*()_+-={\':[,]}|;.</>?"'),
+            (u'\x08\x0c\n\r\t', '"\\b\\f\\n\\r\\t"'),
+            (u'\u0123\u4567\u89ab\ucdef\uabcd\uef4a', '"\\u0123\\u4567\\u89ab\\ucdef\\uabcd\\uef4a"'),
+        ]
+
         fname = encode_basestring_ascii.__name__
         for input_string, expect in CASES:
             result = encode_basestring_ascii(input_string)
@@ -1442,36 +1444,42 @@ class TestPass3(TestCase):
 import unittest
 import simplejson as json
 
-dct1 = {
-    'key1': 'value1'
-}
+def _dicts():
+    dct1 = {
+        'key1': 'value1'
+    }
 
-dct2 = {
-    'key2': 'value2',
-    'd1': dct1
-}
+    dct2 = {
+        'key2': 'value2',
+        'd1': dct1
+    }
 
-dct3 = {
-    'key2': 'value2',
-    'd1': json.dumps(dct1)
-}
+    dct3 = {
+        'key2': 'value2',
+        'd1': json.dumps(dct1)
+    }
 
-dct4 = {
-    'key2': 'value2',
-    'd1': json.RawJSON(json.dumps(dct1))
-}
+    dct4 = {
+        'key2': 'value2',
+        'd1': json.RawJSON(json.dumps(dct1))
+    }
+    return dct1, dct2, dct3, dct4
+
 
 
 class TestRawJson(unittest.TestCase):
 
     def test_normal_str(self):
+        dct1, dct2, dct3, dct4 = _dicts()
         self.assertNotEqual(json.dumps(dct2), json.dumps(dct3))
 
     def test_raw_json_str(self):
+        dct1, dct2, dct3, dct4 = _dicts()
         self.assertEqual(json.dumps(dct2), json.dumps(dct4))
         self.assertEqual(dct2, json.loads(json.dumps(dct4)))
 
     def test_list(self):
+        dct1, dct2, dct3, dct4 = _dicts()
         self.assertEqual(
             json.dumps([dct2]),
             json.dumps([json.RawJSON(json.dumps(dct2))]))
@@ -1480,6 +1488,7 @@ class TestRawJson(unittest.TestCase):
             json.loads(json.dumps([json.RawJSON(json.dumps(dct2))])))
 
     def test_direct(self):
+        dct1, dct2, dct3, dct4 = _dicts()
         self.assertEqual(
             json.dumps(dct2),
             json.dumps(json.RawJSON(json.dumps(dct2))))

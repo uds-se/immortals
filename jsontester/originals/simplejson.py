@@ -1689,3 +1689,6 @@ def simple_first(kv):
     elements to the top, then container elements.
     """
     return (isinstance(kv[1], (list, dict, tuple)), kv[0])
+
+def from_json(s):
+    return loads(s)
