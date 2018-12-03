@@ -58,10 +58,11 @@ if __name__ == "__main__":
     def test_err_%d(self):
         # %s
         js, serr = E_PARSE[%d]
+        err = None
         with self.assertRaises(Exception) as je:
             json.from_json(js)
             err = str(je)
-            self.assertEqual(err, serr)
+        self.assertEqual(err, serr)
     """
 
     s = "\n".join([method_str % (i, repr(s), i) for i,s in enumerate(strings)])
