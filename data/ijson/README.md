@@ -16,12 +16,13 @@ originals/ijson.py                                                              
 
 Mutation results from user tests:
 
+```
 Number of mutants produced: 274
 Killed by user tests: 210
 Survived: 35
 Aborted (did not compile -- subtract from total population): 21
 Timeout (add to killed): 8
-
+```
 
 # Unit Tests
 

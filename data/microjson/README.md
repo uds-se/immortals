@@ -16,12 +16,13 @@ microjson.py                                                                    
 
 Mutation results from user tests:
 
+```
 Number of mutants produced: 466
 Killed by user tests: 271
 Survived: 141
 Aborted (did not compile -- subtract from total population): 43
 Timeout (add to killed): 11
-
+```
 
 # Unit Tests
 
