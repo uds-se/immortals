@@ -4,6 +4,7 @@ import unittest
 from io import BytesIO, StringIO
 from decimal import Decimal
 import threading
+import timeout_decorator
 
 import ijson
 
@@ -120,35 +121,42 @@ class Parse(unittest.TestCase):
     Base class for parsing tests that is used to create test cases for each
     available backends.
     '''
+    @timeout_decorator.timeout(10)
     def test_basic_parse(self):
         events = list(ijson.basic_parse(BytesIO(JSON)))
         self.assertEqual(events, JSON_EVENTS)
 
+    @timeout_decorator.timeout(10)
     def test_basic_parse_threaded(self):
         thread = threading.Thread(target=self.test_basic_parse)
         thread.start()
         thread.join()
 
+    @timeout_decorator.timeout(10)
     def test_scalar(self):
         events = list(ijson.basic_parse(BytesIO(SCALAR_JSON)))
         self.assertEqual(events, [('number', 0)])
 
+    @timeout_decorator.timeout(10)
     def test_strings(self):
         events = list(ijson.basic_parse(BytesIO(STRINGS_JSON)))
         strings = [value for event, value in events if event == 'string']
         self.assertEqual(strings, ['', '"', '\\', '\\\\', '\b\f\n\r\t'])
         self.assertTrue(('map_key', 'special\t') in events)
 
+    @timeout_decorator.timeout(10)
     def test_surrogate_pairs(self):
         event = next(ijson.basic_parse(BytesIO(SURROGATE_PAIRS_JSON)))
         parsed_string = event[1]
         self.assertEqual(parsed_string, '💩')
 
+    @timeout_decorator.timeout(10)
     def test_numbers(self):
         events = list(ijson.basic_parse(BytesIO(NUMBERS_JSON)))
         types = [type(value) for event, value in events if event == 'number']
         self.assertEqual(types, [int, Decimal, Decimal])
 
+    @timeout_decorator.timeout(10)
     def test_invalid(self):
         for json in INVALID_JSONS:
             # Yajl1 doesn't complain about additional data after the end
@@ -158,11 +166,13 @@ class Parse(unittest.TestCase):
             with self.assertRaises(ijson.JSONError) as cm:
                 list(ijson.basic_parse(BytesIO(json)))
 
+    @timeout_decorator.timeout(10)
     def test_incomplete(self):
         for json in INCOMPLETE_JSONS:
             with self.assertRaises(ijson.IncompleteJSONError):
                 list(ijson.basic_parse(BytesIO(json)))
 
+    @timeout_decorator.timeout(10)
     def test_utf8_split(self):
         buf_size = JSON.index(b'\xd1') + 1
         try:
@@ -170,16 +180,19 @@ class Parse(unittest.TestCase):
         except UnicodeDecodeError:
             self.fail('UnicodeDecodeError raised')
 
+    @timeout_decorator.timeout(10)
     def test_lazy(self):
         # shouldn't fail since iterator is not exhausted
         ijson.basic_parse(BytesIO(INVALID_JSONS[0]))
         self.assertTrue(True)
 
+    @timeout_decorator.timeout(10)
     def test_boundary_lexeme(self):
         buf_size = JSON.index(b'false') + 1
         events = list(ijson.basic_parse(BytesIO(JSON), buf_size=buf_size))
         self.assertEqual(events, JSON_EVENTS)
 
+    @timeout_decorator.timeout(10)
     def test_boundary_whitespace(self):
         buf_size = JSON.index(b'   ') + 1
         events = list(ijson.basic_parse(BytesIO(JSON), buf_size=buf_size))
