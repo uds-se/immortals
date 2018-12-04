@@ -87,9 +87,8 @@ if (!is.null(args$matrix)){
 }else if(!is.null(args$dir)){
     wdir = getwd()
     output = if (!is.null(args$output)) args$output else file.path(wdir, 'estimation_results.csv')
-    print(output)
-    #res = process_folder(args$dir)
-    #fwrite(res,file=output,sep=";")
+    res = process_folder(args$dir)
+    fwrite(res,file=output,sep=";")
 }else{
     stop("invalid arguments")
 }
