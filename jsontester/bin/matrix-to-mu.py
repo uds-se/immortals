@@ -7,4 +7,6 @@ else:
     lines = [l.strip().split(',') for l in open(sys.argv[1]).readlines()]
 
 for line in lines:
-    print("%s,%s" %(line[0], '1' if any(i == '1' for i in line) else '0'))
+    mutant, *rest = line
+    print("%s,%s" % ( mutant, "0" if all(i == '0' for i in rest) else "1") )
+
