@@ -8,5 +8,6 @@ else:
 
 for line in lines:
     mutant, *rest = line
-    print("%s,%s" % ( mutant, "0" if all(i == '0' for i in rest) else "1") )
+    if all(i == '0' for i in rest): continue
+    print(','.join(line))
 
