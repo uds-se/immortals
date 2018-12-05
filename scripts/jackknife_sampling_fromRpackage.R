@@ -27,14 +27,16 @@ get_custom_estimate<-function(counts){
 }
 
 process_file<-function(f_name){
+    subsample_size=50
     matrix = fread(f_name)
-    sprintf("Processing %s", basename(f_name))
+    print(sprintf("Processing %s", basename(f_name)))
     cat("Data size: ", dim(matrix), "\n")
     # print(data, nrows=3, topn=2)
     if (max(matrix) > 1){ # remove index column
         matrix = matrix[,-1]
     }
-    return (get_estimate(matrix))
+    data_ids=sample(ncol(matrix), size=subsample_size)
+    return (get_estimate(matrix[,..data_ids]))
 }
 
 process_folder<-function(d_name){
@@ -60,12 +62,12 @@ get_estimate<-function(data){
     k = ncol(data)
     n_mutants = nrow(data)
     rs = rowSums(data)
-    counts = as.data.table(table(factor(rs, levels=0:k)))
+    counts = as.data.table(table(factor(rs, levels=1:k)))
     setnames(counts, c("rs","N"))
     print("Frequencies:")
     print(counts)
-    sprintf("# of Samples: %d", k)
-    sprintf("True # of Mutants: %d", n_mutants)
+    print(sprintf("# of Samples: %d", k))
+    print(sprintf("True # of Mutants: %d", n_mutants))
 
     print("Estimation (wiqid)")
     est_wiqid = closedCapMhJK(counts$N)
