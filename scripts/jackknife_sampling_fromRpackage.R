@@ -60,7 +60,7 @@ get_estimate<-function(data){
     k = ncol(data)
     n_mutants = nrow(data)
     rs = rowSums(data)
-    counts = as.data.table(table(factor(rs, levels=0:k)))
+    counts = as.data.table(table(factor(rs, levels=1:k)))
     setnames(counts, c("rs","N"))
     print("Frequencies:")
     print(counts)
