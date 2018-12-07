@@ -93,6 +93,10 @@ texec: $(target).texec.$(testsuite)
 %.texec.utest: tests/%_utest.py
 	PYTHONPATH=targets:tests python3 $< -v
 
+%.texec.ctest: tests/%_ctest.py
+	PYTHONPATH=targets:tests python3 $< -v
+
+
 
 #(3) COVERAGE
 coverage: $(target).coverage.$(testsuite)
@@ -120,6 +124,13 @@ coverage: $(target).coverage.$(testsuite)
 	COVERAGE_FILE=$*.coverage.utest coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.utest
 	mv .$*.coverage.utest $*.coverage.utest
 
+%.coverage.ctest: tests/%_ctest.py targets/%.py
+	rm -rf $*.coverage.ctest
+	COVERAGE_FILE=$*.coverage.ctest PYTHONPATH=targets:tests coverage run $<
+	COVERAGE_FILE=$*.coverage.ctest coverage report -m |  grep -e '\(Name\|targets\|-----\)' | tee .$*.coverage.ctest
+	mv .$*.coverage.ctest $*.coverage.ctest
+
+
 #(4) MUTATE
 mutate: $(target).mutate.$(testsuite).log
 %.mutate.gfuzz.log: targets/%.py tests/%_gfuzz.py %.gfuzz.pickled
@@ -137,6 +148,10 @@ mutate: $(target).mutate.$(testsuite).log
 %.mutate.utest.log: targets/%.py tests/%_utest.py
 	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_utest -e -m | tee .$*.mutate.utest.log
 	mv .$*.mutate.utest.log $*.mutate.utest.log
+
+%.mutate.ctest.log: targets/%.py tests/%_ctest.py
+	TARGET=$* PYTHONPATH=targets:tests:lib $(python) ./bin/mut.py --target $* --unit-test $*_ctest -e -m | tee .$*.mutate.ctest.log
+	mv .$*.mutate.ctest.log $*.mutate.ctest.log
 
 #(5) MUTATION-STATUS
 mstatus: $(target).mstatus.$(testsuite).csv
@@ -160,6 +175,11 @@ mstatus: $(target).mstatus.$(testsuite).csv
 	cat .$*.utest.info | sed -e 's/^   - \[# *\([0-9]*\)\] \([A-Z]\{3\}\) \([^:]*:[0-9]*\) *: *.\[.*\]/\1,\2,\3,/g' > .$*.mstatus.utest.csv
 	mv .$*.mstatus.utest.csv $*.mstatus.utest.csv
 
+%.mstatus.ctest.csv: %.mutate.ctest.log
+	cat $*.mutate.ctest.log | sed -e 1,6d| grep -e '\(\[........s\]\|$*:.*:\)' | paste - - > .$*.ctest.info
+	cat .$*.ctest.info | sed -e 's/^   - \[# *\([0-9]*\)\] \([A-Z]\{3\}\) \([^:]*:[0-9]*\) *: *.\[.*\]/\1,\2,\3,/g' > .$*.mstatus.ctest.csv
+	mv .$*.mstatus.ctest.csv $*.mstatus.ctest.csv
+
 #(6) TLOG
 tlog: $(target).$(testsuite).tlog
 n=0
@@ -182,6 +202,11 @@ n=0
 	for i in mutants_$*/*/; do echo $$i | tee -a .$*.utest.tlog; \
 		(export PYTHONPATH=$$i; ( $(python) tests/$*_utest.py > $$i/.utest-$(n).log 2>&1; mv $$i/.utest-$(n).log $$i/utest-$(n).log ) & ) ; done
 	mv .$*.utest.tlog $*.utest.tlog
+
+%.ctest.tlog: %.mutate.ctest.log
+	for i in mutants_$*/*/; do echo $$i | tee -a .$*.ctest.tlog; \
+		(export PYTHONPATH=$$i; ( $(python) tests/$*_ctest.py > $$i/.ctest-$(n).log 2>&1; mv $$i/.ctest-$(n).log $$i/ctest-$(n).log ) & ) ; done
+	mv .$*.ctest.tlog $*.ctest.tlog
 
 .tlog.%.done:
 	./bin/wait.py $*
@@ -209,6 +234,11 @@ tsummarize: $(target).$(testsuite).tsummarize
 		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
 	touch $*.utest.tsummarize
 
+%.ctest.tsummarize: %.ctest.tlog .tlog.%.done
+	for i in mutants_$*/*/ctest-$(n).log; do \
+		echo $$i; grep -a '\(FAIL:\|ERROR:\)' $$i > $$i.fail; echo $$i.fail; done
+	touch $*.ctest.tsummarize
+
 #(8) PREMATRIX
 prematrix:	$(target).$(testsuite).prematrix
 %.gfuzz.prematrix: %.gfuzz.tsummarize .%.mcount
@@ -230,6 +260,11 @@ prematrix:	$(target).$(testsuite).prematrix
 	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/utest-$(n).log.fail \
 		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > .$(target).utest.prematrix
 	mv .$(target).utest.prematrix $(target).utest.prematrix
+
+%.ctest.prematrix: %.ctest.tsummarize .%.mcount
+	for i in $$(seq 1 $$(cat .$(target).mcount)); do echo $$i $$(cat mutants_$*/$$i/ctest-$(n).log.fail \
+		| sed -e 's# (.*)##g' -e 's#ERROR: ##g' -e 's#FAIL: ##g' ) ; done > .$(target).ctest.prematrix
+	mv .$(target).ctest.prematrix $(target).ctest.prematrix
 
 .%.mcount: %.mutate.$(testsuite).log
 	ls mutants_$*/ | sort -rn | head -1 > .$*.mcount
@@ -268,6 +303,10 @@ matrix:	$(target).$(testsuite).matrix
 %.utest.matrix: %.utest.prematrix %.utest.lst
 	python3 ./bin/tomatrix.py $*.utest.lst $*.utest.prematrix > .$(target).utest.matrix 
 	mv .$(target).utest.matrix $(target).utest.matrix
+
+%.ctest.matrix: %.ctest.prematrix %.ctest.lst
+	python3 ./bin/tomatrix.py $*.ctest.lst $*.ctest.prematrix > .$(target).ctest.matrix 
+	mv .$(target).ctest.matrix $(target).ctest.matrix
 
 #
 # CLEAN
