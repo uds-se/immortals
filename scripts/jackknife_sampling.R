@@ -12,6 +12,18 @@ get_order <- function(df, order) {
     }
 }
 
+reduce_matrix<-function(matrix, n_groups){
+    c_names = names(matrix)
+    if (n_groups==1){
+        dt = sign(as.data.table(matrix[,rowSums(.SD)]))
+    }else{
+        idx = split(sample(c_names),cut(1:length(c_names), n_groups))
+        dt = sign(as.data.table(lapply(idx, function(x) matrix[,rowSums(.SD), .SDcols=x])))
+    }
+    
+    return(dt)
+}
+
 get_custom_estimate<-function(counts){
     k=nrow(counts)
     f1=get_order(counts, 1)
@@ -26,17 +38,18 @@ get_custom_estimate<-function(counts){
     return (list(est1,est2,est3,est4))
 }
 
-process_file<-function(f_name){
-    subsample_size=50
+process_file<-function(f_name, reduction=1){
     matrix = fread(f_name)
     print(sprintf("Processing %s", basename(f_name)))
     cat("Data size: ", dim(matrix), "\n")
-    # print(data, nrows=3, topn=2)
     if (max(matrix) > 1){ # remove index column
         matrix = matrix[,-1]
     }
-    data_ids=sample(ncol(matrix), size=subsample_size)
-    return (get_estimate(matrix[,..data_ids]))
+    # data_ids=sample(ncol(matrix), size=subsample_size)
+    m_size = ncol(matrix)
+    n_groups = m_size / reduction
+    dt = reduce_matrix(matrix, n_groups)
+    return (get_estimate(dt))
 }
 
 process_folder<-function(d_name){
@@ -82,10 +95,11 @@ parser = ArgumentParser()
 parser$add_argument("-m", "--matrix", help="Input matrix file")
 parser$add_argument("-d", "--dir", help="Input dir")
 parser$add_argument("-o", "--output", help="Filename for the resulting comparison table")
+parser$add_argument("-n", "--reduction", help="Matrix reduction rate", default=1, type="integer")
 
 args = parser$parse_args()
 if (!is.null(args$matrix)){
-    est=process_file(args$matrix)
+    est=process_file(args$matrix, args$reduction)
 }else if(!is.null(args$dir)){
     wdir = getwd()
     output = if (!is.null(args$output)) args$output else file.path(wdir, 'estimation_results.csv')
