@@ -4,6 +4,9 @@ require("argparse")
 require("wiqid")
 
 get_order <- function(df, order) {
+    if(is.null(dim(df))){# we have vector of frequences, not a table
+        return(df[order])
+    }
     val = df[rs==order,N]
     if (length(val)==0){
         return(0)
@@ -20,22 +23,66 @@ reduce_matrix<-function(matrix, n_groups){
         idx = split(sample(c_names),cut(1:length(c_names), n_groups))
         dt = sign(as.data.table(lapply(idx, function(x) matrix[,rowSums(.SD), .SDcols=x])))
     }
-    
     return(dt)
+}
+
+seN<-function(N, f, a, k){
+    varN=sum(a[,k]^2*f)-N[k]
+    return(sqrt(varN))   
+}
+
+varNS<-function(N, f, a, S, k){
+    b = a[,k+1]-a[,k]
+    v = S/(S-1)*(sum(b^2*f)-(N[k+1]-N[k])^2/S)
+    return(v)
+}
+
+Tk<-function(N, f, a, S, k){
+    return((N[k+1]-N[k])/(varNS(N,f,a,S,k)^(1/2)))
+}
+
+p_value<-function(t){
+    return(2*pnorm(-t))
 }
 
 get_custom_estimate<-function(counts){
     k=nrow(counts)
-    f1=get_order(counts, 1)
-    f2=get_order(counts, 2)
-    f3=get_order(counts, 3)
-    f4=get_order(counts, 4)
-    sum_fk = sum(counts[rs!=0,N])
-    est1 = sum_fk + f1 * (k - 1)   /k
-    est2 = sum_fk + f1 * (2*k - 3) /k - f2 * (k - 2)^2          /(k*(k-1))
-    est3 = sum_fk + f1 * (3*k - 6) /k - f2 * (3*k^2 - 15*k + 19)/(k*(k-1)) + f3 * (k-3)^3                 /(k*(k-1)*(k-2))
-    est4 = sum_fk + f1 * (4*k - 10)/k - f2 * (6*k^2 - 36*k + 55)/(k*(k-1)) + f3 * (4*k^3-42*k^2+148*k-175)/(k*(k-1)*(k-2)) - f4 * (k-4)^4/(k*(k-1)*(k-2)*(k-3))
-    return (list(est1,est2,est3,est4))
+    f = c(0,0,0)
+    f=sapply(c(1:k), function(x)get_order(counts, x))
+    S = sum(counts[rs!=0,N])
+    a = matrix(1, k, 5)
+    N = c(0,0,0,0)
+    T = c(0,0,0)
+    p = c(0,0,0)
+    a[1,1] = 1 + (k - 1)/k
+    a[1,2] = 1 + (2*k-3)/k
+    a[2,2] = 1 - (k-2)^2/(k*(k-1))
+    a[1,3] = 1 + (3*k-6)/k
+    a[2,3] = 1 - (3*k^2-15*k + 19)/(k*(k-1))
+    a[3,3] = 1 + (k-3)^3/(k*(k-1)*(k-2))
+    a[1,4] = 1 + (4*k-10)/k
+    a[2,4] = 1 - (6*k^2-36*k + 55)/(k*(k-1))
+    a[3,4] = 1 + (4*k^3-42*k^2+148*k-175)/(k*(k-1)*(k-2))
+    a[4,4] = 1 - (k-4)^4/(k*(k-1)*(k-2)*(k-3))
+    a[1,5] = 1 + (5*k-15)/k
+    a[2,5] = 1 - (10*k^2-70*k+125)/(k*(k-1))
+    a[3,5] = 1 + (10*k^3-120*k^2+485*k-660)/(k*(k-1)*(k-2))
+    a[4,5] = 1 - ((k-4)^5-(k-5)^5)/(k*(k-1)*(k-2)*(k-3))
+    a[5,5] = 1 + (k-5)^5/(k*(k-1)*(k-2)*(k-3)*(k-4))
+    N = sapply(c(1:5), function(x) S + sum(f*(a[,x]-1)))
+    T = sapply(c(1:4),function(x)Tk(N,f,a,S,x))
+    p = sapply(c(1:4),function(x)p_value(T[x]))
+    # print(N)
+    se=sapply(c(1:5), function(k)seN(N,f,a,k))
+    null_hyp = as.data.table(cbind(T,p))
+    null_hyp = rbind(null_hyp,list(NaN,NaN))
+    optimal = rep('',5)
+    opt_index=which(null_hyp$p > 0.05)[1]
+    optimal[opt_index]='*'
+    # print(null_hyp)
+    Nse=cbind(optimal,N,se, lowCI=N-se*1.96,uppCI=N+se*1.96,null_hyp)
+    print(Nse)
+    return (Nse)
 }
 
 process_file<-function(f_name, reduction=1){
@@ -64,8 +111,15 @@ process_folder<-function(d_name){
         num_mutants = est_tuple[[1]]
         est_wiqid = est_tuple[[2]]
         est_custom = est_tuple[[3]]
-        est_custom_string = paste(est_custom, collapse=', ')
-        est_wiqid_count = est_wiqid$real[1,1]
+        est_custom_value = est_custom[optimal=='*',.(N,se)]
+        ci = paste(est_custom[optimal=='*',.(lowCI,uppCI)], collapse=', ')
+        if (nrow(est_custom_value)==0){
+            est_custom_value = est_custom[5,.(N,se)]
+            ci = paste(est_custom[5,.(lowCI,uppCI)], collapse=', ')
+        }
+        est_custom_string = do.call(sprintf, c(list('%f ± %f, (%s)'), est_custom_value, ci))
+        #sprintf('%f ± %f, %s', est_custom_value, ci)
+        est_wiqid_count = do.call(sprintf, c(list('%f, (%f, %f)'), est_wiqid$real))
         res=rbind(res, list(basename(f_name), num_mutants, est_wiqid_count, est_custom_string))
     }
     return (res)
@@ -81,13 +135,12 @@ get_estimate<-function(data){
     print(counts)
     print(sprintf("# of Samples: %d", k))
     print(sprintf("True # of Mutants: %d", n_mutants))
-
-    print("Estimation (wiqid)")
     est_wiqid = closedCapMhJK(counts$N)
-    est_custom = get_custom_estimate(counts)
+    print("Estimation (wiqid)")
     print(est_wiqid$real)
+    est_custom = get_custom_estimate(counts)
     print("Estimation (custom)")
-    print(est_custom)
+    print(est_custom$N)
     return (list(n_mutants, est_wiqid, est_custom))
 }
 
@@ -104,7 +157,11 @@ if (!is.null(args$matrix)){
     wdir = getwd()
     output = if (!is.null(args$output)) args$output else file.path(wdir, 'estimation_results.csv')
     res = process_folder(args$dir)
-    fwrite(res,file=output,sep=";")
+    fwrite(res,file=output,sep="\t")
 }else{
-    stop("invalid arguments")
+    print("test dataset")
+    cc=as.data.table(cbind(seq(1,18),c(43,16,8,6,0,2,1,rep(0,11))))
+    print(cc)
+    names(cc)<-c("rs","N")
+    est=get_custom_estimate(cc)
 }
