@@ -15,6 +15,7 @@ get_order <- function(df, order) {
     }
 }
 
+# deprecated
 reduce_matrix<-function(matrix, n_groups){
     c_names = names(matrix)
     if (n_groups==1){
@@ -28,7 +29,7 @@ reduce_matrix<-function(matrix, n_groups){
 
 seN<-function(N, f, a, k){
     varN=sum(a[,k]^2*f)-N[k]
-    return(sqrt(varN))   
+    return(sqrt(varN))
 }
 
 varNS<-function(N, f, a, S, k){
@@ -45,7 +46,7 @@ p_value<-function(t){
     return(2*pnorm(-t))
 }
 
-get_custom_estimate<-function(counts){
+get_custom_jackknife_estimate<-function(counts){
     k=nrow(counts)
     f = c(0,0,0)
     f=sapply(c(1:k), function(x)get_order(counts, x))
@@ -85,6 +86,67 @@ get_custom_estimate<-function(counts){
     return (Nse)
 }
 
+get_nonzero_f<-function(f, idx){
+
+}
+
+get_sample_coverage_estimate<-function(counts){
+    k = nrow(counts)
+    f = sapply(c(1:k), function(x)get_order(counts, x))
+    r = sum(counts[,N]) # sum of unique samples found
+    sm = sum(f*c(1:k))
+    smi = sum(f*c(1:k)*c(0:(k-1)))
+    C = 1 - f[1]/(sm)
+    gamma2 = max(0, r/C*k*smi/((k-1)*sm^2)-1)
+    Nsc = r/C + f[1]*gamma2/C
+    H = array(,k)
+    for (j in c(1:k)){
+        if (0 <= 1-r*k*smi/(C*(k-1)*sm^2)){
+            H[1] = gamma2 / C + ((gamma2 * f[1] + r) * sm - f[1] ^ 2 * gamma2 - r * f[1]) / (C ^ 2 * sm ^ 2)
+            H[j] = f[1] * j * (gamma2 * f[1] + r) / (C ^ 2 * sm ^ 2)
+        }else{
+            H[1] = - f[1] * r * k * smi * (2 * C * sm - sm + f[1]) / (C ^ 3 * (k - 1) * sm ^ 4) +
+                gamma2 / C + ((gamma2 * f[1] + r) * sm - f[1] ^ 2 * gamma2 - r * f[1]) / (C ^ 2 * sm ^ 2)
+            H[j] = (- f[1] * r * j * (sm * ((j - 1) * sm - 2 * smi) * C - smi * f[1]) * k / (C ^ 3 * (k - 1) * sm ^ 4)) + f[1] * j * (gamma2 * f[1] + r) / (C ^ 2 * sm ^ 2)
+        }
+    }
+    cov = matrix(, nrow = k, ncol = k)
+    for (i in c(1:k)){
+        for (j in c(1:k)){
+            if (i==j){
+                cov[i,i]=f[i]*(1-f[i]/Nsc)
+
+            }else{
+                cov[i,j]=-f[i]*f[j]/Nsc
+            }
+        }
+    }
+    varNsc=0
+    for (i in c(1:k)){
+        for (j in c(1:k)){
+            varNsc=varNsc+H[i]*H[j]*cov[i,j]
+        }
+    }
+    se = sqrt(varNsc)
+    Nse = cbind(Nsc,se, lowCI=Nsc-se*1.96,uppCI=Nsc+se*1.96)
+    return (Nse)
+}
+
+get_f1f2_estimate<-function(counts){
+    k = nrow(counts)
+    k = 2 # we need only first two frequencies
+    f = sapply(c(1:k), function(x)get_order(counts, x))
+    if (f[2]==0){
+        return (0, 0)
+    }
+    r = sum(counts[,N])
+    N12 = r+f[1]^2/(2*f[2])
+    varN12 = f[2]*(1/4*(f[1]/f[2])^4+(f[1]/f[2])^3+1/2*(f[1]/f[2])^2)
+    se = sqrt(varN12)
+    Nse = cbind(N12,se, lowCI=N12-se*1.96,uppCI=N12+se*1.96)
+    return (Nse)
+}
+
 process_file<-function(f_name, reduction=1){
     matrix = fread(f_name)
     print(sprintf("Processing %s", basename(f_name)))
@@ -96,7 +158,7 @@ process_file<-function(f_name, reduction=1){
     m_size = ncol(matrix)
     n_groups = m_size / reduction
     dt = reduce_matrix(matrix, n_groups)
-    return (get_estimate(dt))
+    return (get_jackknife_estimate(dt))
 }
 
 process_folder<-function(d_name){
@@ -125,7 +187,7 @@ process_folder<-function(d_name){
     return (res)
 }
 
-get_estimate<-function(data){
+get_jackknife_estimate<-function(data){
     k = ncol(data)
     n_mutants = nrow(data)
     rs = rowSums(data)
@@ -138,7 +200,7 @@ get_estimate<-function(data){
     est_wiqid = closedCapMhJK(counts$N)
     print("Estimation (wiqid)")
     print(est_wiqid$real)
-    est_custom = get_custom_estimate(counts)
+    est_custom = get_custom_jackknife_estimate(counts)
     print("Estimation (custom)")
     print(est_custom$N)
     return (list(n_mutants, est_wiqid, est_custom))
@@ -163,5 +225,15 @@ if (!is.null(args$matrix)){
     cc=as.data.table(cbind(seq(1,18),c(43,16,8,6,0,2,1,rep(0,11))))
     print(cc)
     names(cc)<-c("rs","N")
-    est=get_custom_estimate(cc)
+    print("jack_knife_estimate:")
+    est=get_custom_jackknife_estimate(cc)
+    print("sample_coverage_estimate:")
+    sce=get_sample_coverage_estimate(cc)
+    print(sce)
+    print("f1f2_estimate:")
+    f1f2=get_f1f2_estimate(cc)
+    print(f1f2)
 }
+
+# TODO
+# make bootstrap on top
