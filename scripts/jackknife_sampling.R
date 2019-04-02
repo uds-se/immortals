@@ -97,15 +97,15 @@ get_sample_coverage_estimate<-function(counts){
     sm = sum(f*c(1:k))
     smi = sum(f*c(1:k)*c(0:(k-1)))
     C = 1 - f[1]/(sm)
-    gamma2 = max(0, r/C*k*smi/((k-1)*sm^2)-1)
+    gamma2 = max(0, r/C*smi/((k-1)*sm^2)*k-1)
     Nsc = r/C + f[1]*gamma2/C
     H = array(,k)
     for (j in c(1:k)){
-        if (0 <= 1-r*k*smi/(C*(k-1)*sm^2)){
+        if (0 <= 1-r*smi/(C*(k-1)*sm^2)*k){
             H[1] = gamma2 / C + ((gamma2 * f[1] + r) * sm - f[1] ^ 2 * gamma2 - r * f[1]) / (C ^ 2 * sm ^ 2)
             H[j] = f[1] * j * (gamma2 * f[1] + r) / (C ^ 2 * sm ^ 2)
         }else{
-            H[1] = - f[1] * r * k * smi * (2 * C * sm - sm + f[1]) / (C ^ 3 * (k - 1) * sm ^ 4) +
+            H[1] = - f[1] * r * (2 * C * sm - sm + f[1]) / (C ^ 3 * (k - 1) * sm ^ 4) * k * smi +
                 gamma2 / C + ((gamma2 * f[1] + r) * sm - f[1] ^ 2 * gamma2 - r * f[1]) / (C ^ 2 * sm ^ 2)
             H[j] = (- f[1] * r * j * (sm * ((j - 1) * sm - 2 * smi) * C - smi * f[1]) * k / (C ^ 3 * (k - 1) * sm ^ 4)) + f[1] * j * (gamma2 * f[1] + r) / (C ^ 2 * sm ^ 2)
         }
@@ -128,7 +128,7 @@ get_sample_coverage_estimate<-function(counts){
         }
     }
     se = sqrt(varNsc)
-    Nse = cbind(Nsc,se, lowCI=Nsc-se*1.96,uppCI=Nsc+se*1.96)
+    Nse = as.data.table(cbind(Nsc,se, lowCI=Nsc-se*1.96,uppCI=Nsc+se*1.96))
     return (Nse)
 }
 
@@ -136,14 +136,17 @@ get_f1f2_estimate<-function(counts){
     k = nrow(counts)
     k = 2 # we need only first two frequencies
     f = sapply(c(1:k), function(x)get_order(counts, x))
-    if (f[2]==0){
-        return (0, 0)
-    }
     r = sum(counts[,N])
-    N12 = r+f[1]^2/(2*f[2])
-    varN12 = f[2]*(1/4*(f[1]/f[2])^4+(f[1]/f[2])^3+1/2*(f[1]/f[2])^2)
-    se = sqrt(varN12)
-    Nse = cbind(N12,se, lowCI=N12-se*1.96,uppCI=N12+se*1.96)
+    if (f[2]==0){
+        print("WARN: f2 in f1f2 estimator is zero, se will be undefined")
+        N12 = r+f[1]*(f[1]-1)/2
+        se = 0
+    }else{
+        N12 = r+f[1]^2/(2*f[2])
+        varN12 = f[2]*(1/4*(f[1]/f[2])^4+(f[1]/f[2])^3+1/2*(f[1]/f[2])^2)
+        se = sqrt(varN12)
+    }
+    Nse = as.data.table(cbind(N12,se, lowCI=N12-se*1.96,uppCI=N12+se*1.96))
     return (Nse)
 }
 
@@ -209,10 +212,10 @@ get_jackknife_estimate<-function(data){
     print(est_custom$N)
     est_f1f2 = get_f1f2_estimate(counts)
     print("F1F2 Estimation")
-    print(est_f1f2$N)
+    print(est_f1f2)
     est_sample = get_sample_coverage_estimate(counts)
     print("Sample coverage Estimation")
-    print(est_sample$N)
+    print(est_sample)
     return (list(n_mutants, est_wiqid, est_custom, est_f1f2, est_sample))
 }
 
