@@ -173,6 +173,8 @@ process_folder<-function(d_name){
         num_mutants = est_tuple[[1]]
         est_wiqid = est_tuple[[2]]
         est_custom = est_tuple[[3]]
+        est_f1f2 = est_tuple[[4]]
+        est_sample = est_tuple[[5]]
         est_custom_value = est_custom[optimal=='*',.(N,se)]
         ci = paste(est_custom[optimal=='*',.(lowCI,uppCI)], collapse=', ')
         if (nrow(est_custom_value)==0){
@@ -182,7 +184,9 @@ process_folder<-function(d_name){
         est_custom_string = do.call(sprintf, c(list('%f ± %f, (%s)'), est_custom_value, ci))
         #sprintf('%f ± %f, %s', est_custom_value, ci)
         est_wiqid_count = do.call(sprintf, c(list('%f, (%f, %f)'), est_wiqid$real))
-        res=rbind(res, list(basename(f_name), num_mutants, est_wiqid_count, est_custom_string))
+        est_f1f2_string = do.call(sprintf, c(list('%f ± %f, (%f, %f)'), est_f1f2[1,.(N12, se, lowCI, uppCI)]))
+        est_sample_string = do.call(sprintf, c(list('%f ± %f, (%f, %f)'), est_sample[1,.(Nsc, se, lowCI, uppCI)]))
+        res=rbind(res, list(basename(f_name), num_mutants, est_wiqid_count, est_custom_string, est_f1f2_string, est_sample_string))
     }
     return (res)
 }
@@ -198,12 +202,18 @@ get_jackknife_estimate<-function(data){
     print(sprintf("# of Samples: %d", k))
     print(sprintf("True # of Mutants: %d", n_mutants))
     est_wiqid = closedCapMhJK(counts$N)
-    print("Estimation (wiqid)")
+    print("Jackknife Estimation (wiqid)")
     print(est_wiqid$real)
     est_custom = get_custom_jackknife_estimate(counts)
-    print("Estimation (custom)")
+    print("Jackknife Estimation (custom)")
     print(est_custom$N)
-    return (list(n_mutants, est_wiqid, est_custom))
+    est_f1f2 = get_f1f2_estimate(counts)
+    print("F1F2 Estimation")
+    print(est_f1f2$N)
+    est_sample = get_sample_coverage_estimate(counts)
+    print("Sample coverage Estimation")
+    print(est_sample$N)
+    return (list(n_mutants, est_wiqid, est_custom, est_f1f2, est_sample))
 }
 
 parser = ArgumentParser()
