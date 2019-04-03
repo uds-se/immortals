@@ -161,8 +161,8 @@ process_file<-function(f_name, reduction=1){
     m_size = ncol(matrix)
     n_groups = m_size / reduction
     dt = reduce_matrix(matrix, n_groups)
-    return (get_jackknife_estimate(dt))
-}
+    return(dt)
+ }
 
 process_folder<-function(d_name){
     res = data.table(
@@ -172,7 +172,9 @@ process_folder<-function(d_name){
             custom_estimation = character()
         )
     for(f_name in list.files(d_name, full.names=T)){
-        est_tuple = process_file(f_name)
+        dt = process_file(f_name)
+        est_tuple = get_jackknife_estimate(dt)
+        lb = get_lowerbound(dt)
         num_mutants = est_tuple[[1]]
         est_wiqid = est_tuple[[2]]
         est_custom = est_tuple[[3]]
@@ -219,6 +221,29 @@ get_jackknife_estimate<-function(data){
     return (list(n_mutants, est_wiqid, est_custom, est_f1f2, est_sample))
 }
 
+get_lowerbound <- function(data) {
+  # An Improved Nonparametric Lower Bound of Species Richness via a Modified Good–Turing Frequency Formula 2014
+  k = ncol(data)
+  n_mutants = nrow(data)
+  rs = rowSums(data)
+  counts = as.data.table(table(factor(rs, levels=1:k)))
+  setnames(counts, c("rs","N"))
+  S_obs <- sum(counts$N)
+  n <- S_obs
+  f1 <- counts$N[1]
+  f2 <- counts$N[2]
+  f3 <- counts$N[3]
+  f4 <- counts$N[4]
+  var_Schao1 <- f2*(1/4 * ((n-1)/n)^2 * (f1/f2)^4 + ((n-1)/n)^2 * (f1/f2)^3 + 1/2 * (n-1)/n * (f1/f2)^2)
+  S_chao1 <- S_obs + (n-1)/n*f1^2/2/f2
+  R <- exp(1.96*(1+var_Schao1/(S_chao1 - S_obs)^2)^0.5)
+  S_lower <- S_obs + (S_chao1 - S_obs)/R
+  S_upper <- S_obs + (S_chao1 - S_obs)*R
+
+  print("Estimate from the lowerbound formula")
+  print(sprintf("LowCI(important): %f UppI: %f", S_lower, S_upper))
+}
+
 parser = ArgumentParser()
 parser$add_argument("-m", "--matrix", help="Input matrix file")
 parser$add_argument("-d", "--dir", help="Input dir")
@@ -227,7 +252,9 @@ parser$add_argument("-n", "--reduction", help="Matrix reduction rate", default=1
 
 args = parser$parse_args()
 if (!is.null(args$matrix)){
-    est=process_file(args$matrix, args$reduction)
+    dt=process_file(args$matrix, args$reduction)
+    est=get_jackknife_estimate(dt)
+    lb=get_lowerbound(dt)
 }else if(!is.null(args$dir)){
     wdir = getwd()
     output = if (!is.null(args$output)) args$output else file.path(wdir, 'estimation_results.csv')
@@ -247,6 +274,7 @@ if (!is.null(args$matrix)){
     f1f2=get_f1f2_estimate(cc)
     print(f1f2)
 }
-
 # TODO
 # make bootstrap on top
+
+
