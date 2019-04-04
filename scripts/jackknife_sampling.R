@@ -131,6 +131,7 @@ get_sample_coverage_estimate<-function(counts){
     return (Nse)
 }
 
+# this is the Chao2 estimator
 get_f1f2_estimate<-function(counts){
     k = nrow(counts)
     k = 2 # we need only first two frequencies
@@ -149,18 +150,14 @@ get_f1f2_estimate<-function(counts){
     return (Nse)
 }
 
-process_file<-function(f_name, reduction=1){
+process_file<-function(f_name){
     matrix = fread(f_name)
     print(sprintf("Processing %s", basename(f_name)))
     cat("Data size: ", dim(matrix), "\n")
     if (max(matrix) > 1){ # remove index column
         matrix = matrix[,-1]
     }
-    # data_ids=sample(ncol(matrix), size=subsample_size)
-    m_size = ncol(matrix)
-    n_groups = m_size / reduction
-    dt = reduce_matrix(matrix, n_groups)
-    return(dt)
+    return(matrix)
  }
 
 process_folder<-function(d_name){
@@ -251,6 +248,7 @@ get_upperbound <- function(data, U=0, alpha=0.05){
 }
 
 get_lowerbound <- function(data) {
+  # chao1987estimating.pdf Estimating the Population Size for Capture-Recapture Data with Unequal Catchability
   # An Improved Nonparametric Lower Bound of Species Richness via a Modified Good–Turing Frequency Formula 2014
   k = ncol(data)
   n_mutants = nrow(data)
@@ -264,13 +262,17 @@ get_lowerbound <- function(data) {
   f3 <- counts$N[3]
   f4 <- counts$N[4]
   var_Schao1 <- f2*(1/4 * ((n-1)/n)^2 * (f1/f2)^4 + ((n-1)/n)^2 * (f1/f2)^3 + 1/2 * (n-1)/n * (f1/f2)^2)
-  S_chao1 <- S_obs + (n-1)/n*f1^2/2/f2
+  var_Schao1 <- f2*(0.25 * (f1/f2)^4 + (f1/f2)^3 + 0.5 * (f1/f2)^2) # chao1987estimating.pdf
+  #S_chao1 <- S_obs + (n-1)/n*f1^2/2/f2
+  S_chao1 <- S_obs + f1^2/2/f2 # chao1987estimating.pdf
+  # set 1.96 to 1.64 to switch to a one sided 95\% confidence interval, and skip the upper
   R <- exp(1.96*(1+var_Schao1/(S_chao1 - S_obs)^2)^0.5)
+  #R <- exp(1.96*(log(1+var_Schao1/(S_chao1 - S_obs)^2))^0.5) #<- from reviewer
   S_lower <- S_obs + (S_chao1 - S_obs)/R
   S_upper <- S_obs + (S_chao1 - S_obs)*R
 
-  print("Estimate from the lowerbound formula")
-  print(sprintf("LowCI(important): %f UppCI: %f", S_lower, S_upper))
+  print("Estimate of killable mutants from the lowerbound formula")
+  print(sprintf("Est: %s, LowCI(important): %f UppI: %f", S_chao1, S_lower, S_upper))
 }
 
 parser = ArgumentParser()
@@ -278,11 +280,10 @@ parser$add_argument("-m", "--matrix", help="Input matrix file")
 parser$add_argument("-d", "--dir", help="Input dir")
 parser$add_argument("-u", help="Upper bound", type="integer",default=0)
 parser$add_argument("-o", "--output", help="Filename for the resulting comparison table")
-parser$add_argument("-n", "--reduction", help="Matrix reduction rate", default=1, type="integer")
 
 args = parser$parse_args()
 if (!is.null(args$matrix)){
-    dt=process_file(args$matrix, args$reduction)
+    dt=process_file(args$matrix)
     est=get_jackknife_estimate(dt)
     lb=get_lowerbound(dt)
     U=args$u
