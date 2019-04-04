@@ -48,8 +48,7 @@ p_value<-function(t){
 
 get_custom_jackknife_estimate<-function(counts){
     k=nrow(counts)
-    f = c(0,0,0)
-    f=sapply(c(1:k), function(x)get_order(counts, x))
+    f = sapply(c(1:k), function(x)get_order(counts, x))
     S = sum(counts[rs!=0,N])
     a = matrix(1, k, 5)
     N = c(0,0,0,0)
@@ -221,6 +220,36 @@ get_jackknife_estimate<-function(data){
     return (list(n_mutants, est_wiqid, est_custom, est_f1f2, est_sample))
 }
 
+get_upperbound <- function(data, U=0, alpha=0.05){
+    k = ncol(data)
+    n_mutants = nrow(data)
+    if (U==0){
+        U=n_mutants
+    }
+    rs = rowSums(data)
+    counts = as.data.table(table(factor(rs, levels=1:k)))
+    setnames(counts, c("rs","N"))
+    f = sapply(c(1:2), function(x)get_order(counts, x))
+    s_obs = sum(counts[,N])
+    if (f[2]==0){
+        print("Unsupported f2==0")
+        return()
+    }
+    s_hat = s_obs + f[1]^2/(2*f[2])
+    var_s = f[2]*((f[1]/f[2])^2/0.5+(f[1]/f[2])^3+(f[1]/f[2])^4/0.25)
+    mu_y = log(s_hat - s_obs)
+    sigma2 = log(1 + var_s/(s_hat-s_obs)^2)
+    sigma = sqrt(sigma2)
+    p = pnorm((log(U-s_obs)-mu_y)/sigma)
+    z_p_alpha = qnorm(p*alpha/2)
+    z_p_1alpha = qnorm(p*(1-alpha/2))
+    # print(sprintf("a: %f 1-a: %f", z_p_alpha, z_p_1alpha))
+    s_lower = s_obs + (s_hat-s_obs)*exp(sigma*z_p_alpha)
+    s_upper = s_obs + (s_hat-s_obs)*exp(sigma*z_p_1alpha)
+    print(sprintf("Estimate from the upperbound formula (U=%f)", U))
+    print(sprintf("Est: %f, LowCI: %f UppCI: %f", s_hat, s_lower, s_upper))
+}
+
 get_lowerbound <- function(data) {
   # An Improved Nonparametric Lower Bound of Species Richness via a Modified Good–Turing Frequency Formula 2014
   k = ncol(data)
@@ -241,12 +270,13 @@ get_lowerbound <- function(data) {
   S_upper <- S_obs + (S_chao1 - S_obs)*R
 
   print("Estimate from the lowerbound formula")
-  print(sprintf("LowCI(important): %f UppI: %f", S_lower, S_upper))
+  print(sprintf("LowCI(important): %f UppCI: %f", S_lower, S_upper))
 }
 
 parser = ArgumentParser()
 parser$add_argument("-m", "--matrix", help="Input matrix file")
 parser$add_argument("-d", "--dir", help="Input dir")
+parser$add_argument("-u", help="Upper bound", type="integer",default=0)
 parser$add_argument("-o", "--output", help="Filename for the resulting comparison table")
 parser$add_argument("-n", "--reduction", help="Matrix reduction rate", default=1, type="integer")
 
@@ -255,6 +285,8 @@ if (!is.null(args$matrix)){
     dt=process_file(args$matrix, args$reduction)
     est=get_jackknife_estimate(dt)
     lb=get_lowerbound(dt)
+    U=args$u
+    ub=get_upperbound(dt, U)
 }else if(!is.null(args$dir)){
     wdir = getwd()
     output = if (!is.null(args$output)) args$output else file.path(wdir, 'estimation_results.csv')
