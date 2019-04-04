@@ -169,8 +169,7 @@ process_folder<-function(d_name){
         )
     for(f_name in list.files(d_name, full.names=T)){
         dt = process_file(f_name)
-        est_tuple = get_jackknife_estimate(dt)
-        lb = get_lowerbound(dt)
+        est_tuple = get_population_estimate(dt)
         num_mutants = est_tuple[[1]]
         est_wiqid = est_tuple[[2]]
         est_custom = est_tuple[[3]]
@@ -192,7 +191,7 @@ process_folder<-function(d_name){
     return (res)
 }
 
-get_jackknife_estimate<-function(data){
+get_population_estimate<-function(data){
     k = ncol(data)
     n_mutants = nrow(data)
     rs = rowSums(data)
@@ -203,6 +202,8 @@ get_jackknife_estimate<-function(data){
     print(sprintf("# of Samples: %d", k))
     print(sprintf("True # of Mutants: %d", n_mutants))
     est_wiqid = closedCapMhJK(counts$N)
+    # Burnham, K. P. and Overton, W. S. (1978). Estimation of the size of a
+    # closed population when capture probabilities vary among animals
     print("Jackknife Estimation (wiqid)")
     print(est_wiqid$real)
     est_custom = get_custom_jackknife_estimate(counts)
@@ -214,18 +215,16 @@ get_jackknife_estimate<-function(data){
     est_sample = get_sample_coverage_estimate(counts)
     print("Sample coverage Estimation")
     print(est_sample)
+    get_lowerbound(counts)
+    get_upperbound(counts, n_mutants)
     return (list(n_mutants, est_wiqid, est_custom, est_f1f2, est_sample))
 }
 
-get_upperbound <- function(data, U=0, alpha=0.05){
-    k = ncol(data)
-    n_mutants = nrow(data)
-    if (U==0){
-        U=n_mutants
-    }
-    rs = rowSums(data)
-    counts = as.data.table(table(factor(rs, levels=1:k)))
-    setnames(counts, c("rs","N"))
+get_upperbound <- function(counts, n_mutants, alpha=0.05){
+    # Estimating the Richness of a Population When the Maximum Number of Classes
+    # Is Fixed: A Nonparametric Solution to an Archaeological Problem
+    # 2012
+    U = n_mutants
     f = sapply(c(1:2), function(x)get_order(counts, x))
     s_obs = sum(counts[,N])
     if (f[2]==0){
@@ -247,14 +246,9 @@ get_upperbound <- function(data, U=0, alpha=0.05){
     print(sprintf("Est: %f, LowCI: %f UppCI: %f", s_hat, s_lower, s_upper))
 }
 
-get_lowerbound <- function(data) {
+get_lowerbound <- function(counts) {
   # chao1987estimating.pdf Estimating the Population Size for Capture-Recapture Data with Unequal Catchability
   # An Improved Nonparametric Lower Bound of Species Richness via a Modified Good–Turing Frequency Formula 2014
-  k = ncol(data)
-  n_mutants = nrow(data)
-  rs = rowSums(data)
-  counts = as.data.table(table(factor(rs, levels=1:k)))
-  setnames(counts, c("rs","N"))
   S_obs <- sum(counts$N)
   n <- S_obs
   f1 <- counts$N[1]
@@ -284,10 +278,7 @@ parser$add_argument("-o", "--output", help="Filename for the resulting compariso
 args = parser$parse_args()
 if (!is.null(args$matrix)){
     dt=process_file(args$matrix)
-    est=get_jackknife_estimate(dt)
-    lb=get_lowerbound(dt)
-    U=args$u
-    ub=get_upperbound(dt, U)
+    est=get_population_estimate(dt)
 }else if(!is.null(args$dir)){
     wdir = getwd()
     output = if (!is.null(args$output)) args$output else file.path(wdir, 'estimation_results.csv')
