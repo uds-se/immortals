@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# This is a simple random fuzzer
+
 import random
 random.seed(0)
 import string
