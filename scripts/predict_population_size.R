@@ -210,7 +210,7 @@ get_population_estimate<-function(data){
     print("Jackknife Estimation (custom)")
     print(est_custom$N)
     est_f1f2 = get_f1f2_estimate(counts)
-    print("F1F2 Estimation")
+    print("F1F2 Estimation (Chao Estimator)")
     print(est_f1f2)
     est_sample = get_sample_coverage_estimate(counts)
     print("Sample coverage Estimation")
