@@ -52,7 +52,11 @@ targets/%.py: originals/%.py | targets
 	mkdir -p targets/formatted
 	$(autopep8) $@ > targets/formatted/$(@F)
 
+
 #(1) PICKLE
+# So, what we want to do here is to generate the first set of inputs, along
+# with their outputs on the original target. This set of input/output pairs
+# are later used during mutation analysis.
 pickled: $(target).$(testsuite).pickled
 %.gfuzz.pickled: bin/gfuzz.py targets/%.py
 	PYTHONPATH=lib: $(python) bin/gfuzz.py targets/$*.py
@@ -63,8 +67,11 @@ pickled: $(target).$(testsuite).pickled
 %.rfuzz.pickled: bin/rfuzz.py targets/%.py
 	PYTHONPATH=lib: $(python) bin/rfuzz.py targets/$*.py
 
-#(2) TEST
-test: tests/$(target)_$(testsuite).py
+#(2) TESTGEN
+# Here, we generate the test suite. The reason for generating a test suite
+# rather than directly fuzzing is that we want to add a timer for each test
+# case, and also, our mutation analyzer needs test suites.
+testgen: tests/$(target)_$(testsuite).py
 tests/%_gfuzz.py: %.gfuzz.pickled
 	PYTHONPATH=targets: $(python) bin/json_test_tmpl.py $< $* > .$*_gfuzz.py
 	mv .$*_gfuzz.py tests/$*_gfuzz.py
@@ -79,7 +86,9 @@ tests/%_rfuzz.py: %.rfuzz.pickled
 
 # no utest because tests/$(target)_utest.py exists
 
-#(*) TEXEC
+#(*) TESTEXEC
+# Verification step. This is not a dependency for any other step. All that
+# we are doing here is to run the generated tests.
 texec: $(target).texec.$(testsuite)
 %.texec.gfuzz: tests/%_gfuzz.py
 	PYTHONPATH=targets:tests python3 $< -v
@@ -95,8 +104,6 @@ texec: $(target).texec.$(testsuite)
 
 %.texec.ctest: tests/%_ctest.py
 	PYTHONPATH=targets:tests python3 $< -v
-
-
 
 #(3) COVERAGE
 coverage: $(target).coverage.$(testsuite)
