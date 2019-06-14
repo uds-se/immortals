@@ -25,7 +25,7 @@ all:
 	$(MAKE) allmatrix target=ijson && touch .ijson.done
 	$(MAKE) allmatrix target=nayajson && touch .nayajson.done
 
-all-gfuzz:
+all-gfuzz: coverage-gfuzz
 	$(MAKE) microjson.gfuzz.matrix
 	$(MAKE) simplejson.gfuzz.matrix
 	$(MAKE) ijson.gfuzz.matrix
