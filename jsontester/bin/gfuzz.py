@@ -69,7 +69,7 @@ mfile = os.path.splitext(os.path.basename(mfile))[0]
 mymodule = importlib.import_module(mfile)
 sys.path.pop()
 
-json_fuzzer = GCF.GrammarCoverageFuzzer(J_G, start_symbol='<start>')
+json_fuzzer = GF.GrammarFuzzer(J_G, start_symbol='<start>')
 
 strings  = {}
 estrings  = {}

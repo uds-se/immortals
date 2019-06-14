@@ -4,3 +4,5 @@ pyyaml==3.13
 jinja2==2.10
 timeout_decorator==0.4.0
 coverage==4.5.2
+fuzzingbook==0.8.0
+scipy==1.3
