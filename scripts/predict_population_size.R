@@ -195,10 +195,10 @@ get_population_estimate<-function(data){
     k = ncol(data)
     n_mutants = nrow(data)
     rs = rowSums(data)
-    counts = as.data.table(table(factor(rs, levels=1:k)))
+    counts = as.data.table(table(rs))[-1]  # remove f0
     setnames(counts, c("rs","N"))
     print("Frequencies:")
-    print(counts)
+    print(counts[N>0])
     print(sprintf("# of Samples: %d", k))
     print(sprintf("True # of Mutants: %d", n_mutants))
     est_wiqid = closedCapMhJK(counts$N)
