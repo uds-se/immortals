@@ -31,5 +31,6 @@ for k in hm:
 #    print(t, test_alias[t])
 original_tests = {t for t in test_alias if t == test_alias[t]}
 
+print(' tests')
 for m,tests in enumerate(mutants):
-    print("m%d" % (m+1), sum([k for t,k in enumerate(tests) if t in original_tests]))
+    print("m%d,%d" % ((m+1), sum([k for t,k in enumerate(tests) if t in original_tests])))
