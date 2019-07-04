@@ -5,6 +5,7 @@ testsuite=gfuzz
 test_target=$(target)_$(testsuite)
 pyminifier=pyminifier
 autopep8=autopep8
+GFUZZ_MAX=1000
 
 .precious: \
 	$(target).utest.tsummarize \
@@ -51,10 +52,10 @@ allmatrix: \
 	$(target).rfuzz.matrix
 
 cleanall:
-	$(MAKE) clean target=microjson
-	$(MAKE) clean target=nayajson
-	$(MAKE) clean target=ijson
-	$(MAKE) clean target=simplejson
+	$(MAKE) clean-microjson
+	$(MAKE) clean-nayajson
+	$(MAKE) clean-ijson
+	$(MAKE) clean-simplejson
 
 alltargets: targets/microjson.py targets/ijson.py targets/nayajson.py targets/simplejson.py
 
@@ -72,7 +73,7 @@ targets/%.py: originals/%.py | targets
 # are later used during mutation analysis.
 pickled: $(target).$(testsuite).pickled
 %.gfuzz.pickled: bin/gfuzz.py targets/%.py
-	PYTHONPATH=lib: $(python) bin/gfuzz.py targets/$*.py
+	PYTHONPATH=lib: GFUZZ_MAX=$(GFUZZ_MAX) $(python) bin/gfuzz.py targets/$*.py
 
 %.mfuzz.pickled: bin/mfuzz.py targets/%.py
 	PYTHONPATH=lib: $(python) bin/mfuzz.py targets/$*.py
@@ -330,9 +331,9 @@ matrix:	$(target).$(testsuite).matrix
 
 #
 # CLEAN
+clean-%:
+	rm -rf *.$*.*  .*$*.*
 
-clean:
-	rm -rf *.$(testsuite).*
 
 
 #-------------------
