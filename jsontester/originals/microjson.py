@@ -54,13 +54,13 @@ class JSONStream(object):
             c = self.peek()
             if stopcond(c)or c == '':
                 break
-            next(self)
+            self.next()
 
-    def __next__(self, size=1):
+    def next(self, size=1):
         return self._stm.read(size)
 
     def next_ord(self):
-        return ord(next(self))
+        return ord(self.next())
 
     def peek(self):
         if self.pos == self.len:
@@ -94,20 +94,20 @@ def decode_escape(c, stm):
     sv = 12
     r = 0
     for _ in range(0, 4):
-        r |= int(next(stm), 16) << sv
+        r |= int(stm.next(), 16) << sv
         sv -= 4
     return chr(r)
 
 
 def _from_json_string(stm):
-    next(stm)
+    stm.next()
     r = []
     while True:
-        c = next(stm)
+        c = stm.next()
         if c == '':
             raise JSONError(E_TRUNC, stm, stm.pos-1)
         elif c == '\\':
-            c = next(stm)
+            c = stm.next()
             r.append(decode_escape(c, stm))
         elif c == '"':
             return ''.join(r)
@@ -121,7 +121,7 @@ def _from_json_fixed(stm, expected, value, errmsg):
     off = len(expected)
     pos = stm.pos
     if stm.substr(pos, off) == expected:
-        next(stm, off)
+        self.next(off)
         return value
     raise JSONError(errmsg, stm, pos)
 
@@ -140,7 +140,7 @@ def _from_json_number(stm):
             is_float = 1
             if c in('e', 'E'):
                 saw_exp = 1
-        next(stm)
+        stm.next()
     s = stm.substr(pos, stm.pos-pos)
     if is_float:
         return float(s)
@@ -148,7 +148,7 @@ def _from_json_number(stm):
 
 
 def _from_json_list(stm):
-    next(stm)
+    stm.next()
     result = []
     pos = stm.pos
     while True:
@@ -157,10 +157,10 @@ def _from_json_list(stm):
         if c == '':
             raise JSONError(E_TRUNC, stm, pos)
         elif c == ']':
-            next(stm)
+            stm.next()
             return result
         elif c == ',':
-            next(stm)
+            stm.next()
             result.append(_from_json_raw(stm))
             continue
         elif not result:
@@ -171,7 +171,7 @@ def _from_json_list(stm):
 
 
 def _from_json_dict(stm):
-    next(stm)
+    stm.next()
     result = {}
     expect_key = 0
     pos = stm.pos
@@ -183,7 +183,7 @@ def _from_json_dict(stm):
         if expect_key and c in('}', ','):
             raise JSONError(E_DKEY, stm, stm.pos)
         if c in('}', ','):
-            next(stm)
+            stm.next()
             if c == '}':
                 return result
             expect_key = 1
@@ -191,7 +191,7 @@ def _from_json_dict(stm):
         elif c == '"':
             key = _from_json_string(stm)
             stm.skipspaces()
-            c = next(stm)
+            c = stm.next()
             if c != ':':
                 raise JSONError(E_COLON, stm, stm.pos)
             stm.skipspaces()
