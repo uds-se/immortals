@@ -22,7 +22,7 @@ while num > 0:
             if seen[pid] > 10:
                 print(">", pid)
                 os.kill(int(pid), signal.SIGALRM)
-            if seen[pid] > 20:
+            if seen[pid] > int(sys.argv[2]) + 10:
                 os.kill(int(pid), signal.SIGKILL)
                 print("X", pid)
     time.sleep(10)
