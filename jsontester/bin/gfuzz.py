@@ -69,7 +69,16 @@ mfile = os.path.splitext(os.path.basename(mfile))[0]
 mymodule = importlib.import_module(mfile)
 sys.path.pop()
 
+Max = int(os.environ.get('GFUZZ_MAX', '1000')) # takes 18 minutes for 10000
 json_fuzzer = GF.GrammarFuzzer(J_G, start_symbol='<start>')
+def json_fuzzed_(mfile):
+    with open('../data/gfuzz_%d/%s.gfuzz.pickled._' % (Max, mfile), 'rb') as f:
+        while True:
+            try:
+                yield pickle.load(f)
+            except EOFError:
+                break
+json_fuzzed = json_fuzzed_(mfile)
 
 strings  = {}
 estrings  = {}
@@ -81,7 +90,6 @@ def dump_and_flush(f, s):
     f.flush()
 
 import pickle
-Max = int(os.environ.get('GFUZZ_MAX', '1000')) # takes 18 minutes for 10000
 print("Max: ", Max)
 import time
 start_time = time.monotonic()
@@ -91,7 +99,11 @@ with open('%s.gfuzz.pickled' % mfile, 'wb+') as f:
         if i in percentage_points:
             print(i/Max, time.monotonic() - start_time, file=sys.stderr)
         sys.stdout.flush()
-        s = json_fuzzer.fuzz() 
+        #s = json_fuzzer.fuzz()
+        try:
+            s = next(json_fuzzed)
+        except StopIteration:
+            break
         sys.stdout.flush()
         r = None
         if s in strings: continue
