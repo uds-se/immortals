@@ -121,7 +121,7 @@ def _from_json_fixed(stm, expected, value, errmsg):
     off = len(expected)
     pos = stm.pos
     if stm.substr(pos, off) == expected:
-        self.next(off)
+        stm.next(off)
         return value
     raise JSONError(errmsg, stm, pos)
 

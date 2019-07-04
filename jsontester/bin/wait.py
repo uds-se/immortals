@@ -12,13 +12,18 @@ while num > 0:
     num = 0
     for i,s in enumerate(result.decode('utf-8').split("\n")):
         if sys.argv[1] in s and 'wait.py' not in s:
+            pid, python3, testname = s.split(' ') # "13716 python3 tests/microjson_gfuzz.py"
             num += 1
-            print(i, s)
-            if i not in seen:
-                seen[i] = 0
+            print(i, pid, testname)
+            if pid not in seen:
+                seen[pid] = 0
             else:
-                seen[i] += 1
-            if seen[i] > 10:
-                os.kill(i, signal.SIGALRM)
+                seen[pid] += 1
+            if seen[pid] > 1:
+                print(">", pid)
+                os.kill(int(pid), signal.SIGALRM)
+            if seen[pid] > 2:
+                os.kill(int(pid), signal.SIGKILL)
+                print("X", pid)
     time.sleep(10)
     print()
