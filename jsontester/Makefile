@@ -230,7 +230,7 @@ n=0
 	mv .$*.ctest.tlog $*.ctest.tlog
 
 .tlog.%.done:
-	./bin/wait.py $*
+	./bin/wait.py $* $(GFUZZ_MAX)
 	touch .tlog.$*.done
 
 #(7) TSUMMARIZE
