@@ -19,10 +19,10 @@ while num > 0:
                 seen[pid] = 0
             else:
                 seen[pid] += 1
-            if seen[pid] > 1:
+            if seen[pid] > 10:
                 print(">", pid)
                 os.kill(int(pid), signal.SIGALRM)
-            if seen[pid] > 2:
+            if seen[pid] > 20:
                 os.kill(int(pid), signal.SIGKILL)
                 print("X", pid)
     time.sleep(10)
